@@ -14,7 +14,6 @@ theorem not_p_to_implies : ¬p -> p → q := by
   intro not_p p
   contradiction
 
-@[simp]
 def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
   match h:o with
   | nat.zero =>
@@ -108,8 +107,7 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
         assumption
       )
 
-@[simp]
-def nat.check_prime (n: nat) : Decidable (nat.prime n) := by
+def nat.is_prime (n: nat) : Decidable (nat.prime n) := by
   match nat.check_prime_inc n n.inc.inc.inc with
   | Decidable.isTrue h =>
     apply Decidable.isTrue
@@ -126,11 +124,11 @@ def nat.check_prime (n: nat) : Decidable (nat.prime n) := by
       intro divis
       match n with
       | nat.zero =>
-        simp at h
-        match h nat.zero.inc.inc (nat.eq_to_le rfl) with
-        | Or.inl d => exact d ⟨ nat.zero, by simp ⟩ 
-        | Or.inr (Or.inl h) => simp at h
-        | Or.inr (Or.inr h) => simp at h
+        unfold nat.prime_until nat.prime_cond divisible at h
+        match h nat.zero.inc.inc (nat.a_lt_inc_a _) with
+        | Or.inl d => exact d ⟨ nat.zero, by rw [nat.mul_zero_r] ⟩ 
+        | Or.inr (Or.inl h) => rw [nat.eq_inc_irr] at h; contradiction
+        | Or.inr (Or.inr h) => contradiction
       | nat.inc _ =>
       exact n_lt_m (divis.is_le (nat.zero_lt_inc _))
   | Decidable.isFalse h =>
@@ -141,8 +139,7 @@ def nat.check_prime (n: nat) : Decidable (nat.prime n) := by
       exact prime m
     )
 
-@[simp]
-instance prime_is_decidable : Decidable (nat.prime n) := nat.check_prime n
+instance prime_is_decidable : Decidable (nat.prime n) := n.is_prime
 
 -- theorem two_is_prime : nat.prime (nat.inc (nat.inc nat.zero)) := by
 --   intro m divis
