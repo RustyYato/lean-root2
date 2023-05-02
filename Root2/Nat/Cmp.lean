@@ -265,25 +265,14 @@ def nat.compare_lt (a b: nat) : Decidable (a < b) :=
     | nat.inc b₀ =>
       by rw [@nat.lt_inc a₀ b₀]; exact (nat.compare_lt a₀ b₀)
 
-def nat.beq (a b: nat) : Bool :=
-  match a, b with
-  | nat.zero, nat.zero => true
-  | nat.zero, nat.inc _ => false
-  | nat.inc _, nat.zero => false
-  | nat.inc a₀, nat.inc b₀ => a₀.beq b₀
-
-theorem nat.eq_of_beq_eq_true : (a b: nat) -> (a.beq b = true) -> a = b
-  | nat.zero, nat.zero, _ => rfl
-  | nat.inc a₀, nat.inc b₀, h => (a₀.eq_of_beq_eq_true b₀ h).substr rfl
-
-theorem nat.ne_of_beq_eq_false : (a b: nat) -> (a.beq b = false) -> (a = b) -> False
-  | nat.inc a₀, nat.inc b₀, h₁, h₂ => 
-    nat.noConfusion h₂ (a₀.ne_of_beq_eq_false b₀ h₁)
-
 def nat.compare_eq (a b: nat) : Decidable (a = b) :=
-  match eq:a.beq b with
-  | true => Decidable.isTrue (a.eq_of_beq_eq_true b eq)
-  | false => Decidable.isFalse (a.ne_of_beq_eq_false b eq)
+  match a, b with
+   | nat.zero, nat.zero => Decidable.isTrue rfl
+   | nat.zero, nat.inc _ => Decidable.isFalse nat.noConfusion
+   | nat.inc _, nat.zero => Decidable.isFalse nat.noConfusion
+   | nat.inc a₀, nat.inc b₀ => (nat.compare_eq a₀ b₀).byCases
+      (fun a₀_eq_b₀ => Decidable.isTrue (a₀_eq_b₀.substr rfl))
+      (fun a₀_ne_b₀ => Decidable.isFalse (fun a_eq_b => a₀_ne_b₀ (nat.eq_inc_irr.mp a_eq_b)))
 
 theorem nat.inc_le (a b: nat) : inc a <= b -> a <= b := by
   match b with
