@@ -30,7 +30,7 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
           intro m
           intro m_lt_o₀_inc
           have x := prev m
-          match m.compare o₀ with
+          match m.compare_lt o₀ with
           | Decidable.isTrue m_lt_o₀ => exact (x m_lt_o₀)
           | Decidable.isFalse m_not_lt_o₀ =>
             rw [nat.not_lt_is_sym_le_op] at m_not_lt_o₀
@@ -50,7 +50,7 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
           intro m
           intro m_lt_o₀_inc
           have x := prev m
-          match m.compare o₀ with
+          match m.compare_lt o₀ with
           | Decidable.isTrue m_lt_o₀ => exact (x m_lt_o₀)
           | Decidable.isFalse m_not_lt_o₀ =>
             rw [nat.not_lt_is_sym_le_op] at m_not_lt_o₀
@@ -80,7 +80,7 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
         | Decidable.isTrue _ => apply Or.inr; apply Or.inl; assumption
         | Decidable.isFalse _ => match n.compare_eq m with
         | Decidable.isTrue _ => apply Or.inr; apply Or.inr; assumption
-        | Decidable.isFalse _ => match m.compare o₀ with
+        | Decidable.isFalse _ => match m.compare_lt o₀ with
         | Decidable.isTrue h₂ =>
           apply Or.inl
           have x := prev m h₂
@@ -104,13 +104,13 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
         assumption
       )
 
-instance prime_is_decidable : Decidable (nat.prime n) := by
+instance nat.is_prime (n: nat) : Decidable (nat.prime n) := by
   match nat.check_prime_inc n n.inc.inc.inc with
   | Decidable.isTrue h =>
     apply Decidable.isTrue
     intro m
     unfold nat.prime_cond
-    match m.compare_or_eq n with
+    match m.compare_le n with
     | Decidable.isTrue m_le_n =>
       unfold nat.prime_until at *
       rw [←nat.lt_inc_to_le] at m_le_n

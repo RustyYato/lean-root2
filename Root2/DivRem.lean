@@ -28,7 +28,7 @@ def divrem.calc_imp (a b c: nat) (b_gt_0: nat.zero < b) (c_le_a: c <= a) : divre
     apply divrem.calc_imp
     assumption
   | nat.zero =>
-  match nat.compare a b with
+  match nat.compare_lt a b with
     | Decidable.isTrue h => by
       simp
       exact (divrem.remain h)

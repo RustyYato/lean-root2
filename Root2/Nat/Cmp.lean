@@ -1,4 +1,5 @@
 import  Root2.Nat
+import Init.Data.Array.DecidableEq
 
 @[simp]
 def nat.less (a b: nat) : Prop :=
@@ -240,8 +241,7 @@ theorem nat.lt_trans : ∀ {{a b c: nat}}, a < b -> b < c -> a < c := by
       rw [nat.lt_inc] at *
       exact nat.lt_trans a_lt_b b_lt_c
 
-def nat.compare_or_eq (a b: nat) : Decidable (a <= b) :=
-
+def nat.compare_le (a b: nat) : Decidable (a <= b) :=
   match a with
   | nat.zero => Decidable.isTrue (by trivial)
   | nat.inc a₀ => match b with
@@ -250,10 +250,9 @@ def nat.compare_or_eq (a b: nat) : Decidable (a <= b) :=
       contradiction
     )
     | nat.inc b₀ =>
-      by rw [@nat.le_inc a₀ b₀]; exact (nat.compare_or_eq a₀ b₀)
+      by rw [@nat.le_inc a₀ b₀]; exact (nat.compare_le a₀ b₀)
 
-def nat.compare (a b: nat) : Decidable (a < b) :=
-
+def nat.compare_lt (a b: nat) : Decidable (a < b) :=
   match a with
   | nat.zero => match b with
     | nat.zero => Decidable.isFalse (by intro; contradiction)
@@ -264,18 +263,27 @@ def nat.compare (a b: nat) : Decidable (a < b) :=
       contradiction
     )
     | nat.inc b₀ =>
-      by rw [@nat.lt_inc a₀ b₀]; exact (nat.compare a₀ b₀)
+      by rw [@nat.lt_inc a₀ b₀]; exact (nat.compare_lt a₀ b₀)
+
+def nat.beq (a b: nat) : Bool :=
+  match a, b with
+  | nat.zero, nat.zero => true
+  | nat.zero, nat.inc _ => false
+  | nat.inc _, nat.zero => false
+  | nat.inc a₀, nat.inc b₀ => a₀.beq b₀
+
+theorem nat.eq_of_beq_eq_true : (a b: nat) -> (a.beq b = true) -> a = b
+  | nat.zero, nat.zero, _ => rfl
+  | nat.inc a₀, nat.inc b₀, h => (a₀.eq_of_beq_eq_true b₀ h).substr rfl
+
+theorem nat.ne_of_beq_eq_false : (a b: nat) -> (a.beq b = false) -> (a = b) -> False
+  | nat.inc a₀, nat.inc b₀, h₁, h₂ => 
+    nat.noConfusion h₂ (a₀.ne_of_beq_eq_false b₀ h₁)
 
 def nat.compare_eq (a b: nat) : Decidable (a = b) :=
-
-  match a with
-  | nat.zero => match b with
-    | nat.zero => Decidable.isTrue rfl
-    | nat.inc _ => Decidable.isFalse (by intro; contradiction)
-  | nat.inc a₀ => match b with
-    | nat.zero => Decidable.isFalse (by intro; contradiction)
-    | nat.inc b₀ =>
-      by rw [@nat.eq_inc_irr a₀ b₀]; exact (nat.compare_eq a₀ b₀)
+  match eq:a.beq b with
+  | true => Decidable.isTrue (a.eq_of_beq_eq_true b eq)
+  | false => Decidable.isFalse (a.ne_of_beq_eq_false b eq)
 
 theorem nat.inc_le (a b: nat) : inc a <= b -> a <= b := by
   match b with
