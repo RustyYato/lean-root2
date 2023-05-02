@@ -18,11 +18,9 @@ def nat.less_eq (a b: nat) : Prop :=
       | nat.zero => False
       | nat.inc b₀ => less_eq a₀ b₀
 
-@[simp]
 instance : LT nat where
   lt := nat.less
 
-@[simp]
 instance : LE nat where
   le := nat.less_eq
 
