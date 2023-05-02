@@ -10,7 +10,7 @@ theorem divrem.divisible_quocient (d: divrem a b) (divis: divisible a b) : a = n
       | nat.zero => simp at a_eq_bc; assumption
       | nat.inc c₀ =>
         simp at a_eq_bc
-        rw [nat.add_comm] at a_eq_bc
+        rw [nat.mul_inc_r, nat.add_comm] at a_eq_bc
         have bc_le_a := nat.eq_to_le (Eq.symm a_eq_bc)
         have x := nat.add_imp_le bc_le_a
         have contra := nat.comp_dec h x
@@ -22,12 +22,13 @@ theorem divrem.divisible_quocient (d: divrem a b) (divis: divisible a b) : a = n
         have _ := d.div_nz
         match b with
         | nat.zero => contradiction
-        | nat.inc _ => contradiction
+        | nat.inc _ =>
+          rw [nat.mul_zero_r] at h
+          contradiction
       | nat.inc c₀ => 
         simp
-        simp at a_eq_bc
-        rw [nat.add_comm] at a_eq_bc
-        rw [nat.add_comm]
+        rw [nat.mul_inc_r, nat.add_comm] at a_eq_bc
+        rw [nat.mul_inc_r, nat.add_comm]
         apply Eq.symm
         apply nat.sub_to_add
         have y := d₀.divisible_quocient (by 
@@ -45,10 +46,11 @@ theorem divrem.divisible_remainder (d: divrem a b) (divis: divisible a b) : d.re
     exact (nat.mul_irr_l d.div_nz divis_def)
   }
   rw [quot_eq_c, nat.mul_comm, ←divis_def] at x
-  have y := @nat.add_to_sub d.remainder a a x
-  simp at y
+  have y := nat.add_to_sub x
+  rw [nat.checked_sub_aa] at y
   apply Eq.symm
   repeat assumption
+
 
 @[simp]
 def nat.is_divisible (a b: nat) : Decidable (divisible a b) := by
