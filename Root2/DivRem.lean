@@ -67,7 +67,7 @@ theorem divrem.def : ∀ {{a b: nat}} (d: divrem a b), nat.add d.remainder (nat.
   match d with
     | divrem.remain _ => 
       unfold divrem.remainder divrem.quocient
-      simp
+      rw [nat.mul_zero, nat.add_zero_r]
     | divrem.step d₀ => 
       unfold divrem.remainder divrem.quocient
       simp
