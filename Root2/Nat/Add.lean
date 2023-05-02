@@ -1,5 +1,6 @@
 import Root2.Nat.Cmp
 
+@[simp]
 def nat.add (a b : nat) := match a with
   | nat.zero => b
   | nat.inc n => nat.inc (add n b)

@@ -24,3 +24,11 @@ theorem nat.le_add_irr (a b c: nat) : add a b <= add a c -> b <= c := by
     rw [nat.add_inc_r a₀ c]
     rw [nat.le_inc_irr]
     apply nat.le_add_irr
+
+theorem nat.add_gt_zero {{a: nat}} : nat.zero < a -> ∀b, nat.zero < a.add b := by
+  intro a_gt_zero
+  intro b
+  cases a
+  contradiction
+  rw [nat.add_inc_r]
+  trivial

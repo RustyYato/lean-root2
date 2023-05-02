@@ -44,25 +44,11 @@ theorem nat.le_to_inc_le : a <= b -> (nat.inc a) <= (nat.inc b) := by
   intro le_inc
   trivial
 
-theorem nat.inc_lt_to_lt : (nat.inc a) < (nat.inc b) -> a < b := by
-  unfold_lt
-  intro lt_inc
+theorem nat.lt_inc : ((nat.inc a) < (nat.inc b)) = (a < b) := by
   trivial
 
-theorem nat.lt_to_inc_lt : a < b -> (nat.inc a) < (nat.inc b) := by
-  unfold_lt
-  intro lt_inc
+theorem nat.le_inc : ((nat.inc a) <= (nat.inc b)) = (a <= b) := by
   trivial
-
-theorem nat.lt_inc : a < b ↔ (nat.inc a) < (nat.inc b) := by
-  apply Iff.intro
-  . apply nat.lt_to_inc_lt
-  . apply nat.inc_lt_to_lt
-
-theorem nat.le_inc : a <= b ↔ (nat.inc a) <= (nat.inc b) := by
-  apply Iff.intro
-  . apply nat.le_to_inc_le
-  . apply nat.inc_le_to_le
 
 theorem nat.not_lt_is_sym_le : (¬nat.less a b) = nat.less_eq b a := by
   unfold less
@@ -101,6 +87,21 @@ theorem nat.lt_inc_irr (a b: nat) : (inc a < inc b) = (a < b) := by
   trivial
  
 theorem nat.le_inc_irr (a b: nat) : (inc a <= inc b) = (a <= b) := by
+  trivial
+
+theorem nat.lt_to_ne : ∀{{a b: nat}}, (a < b) -> ¬(a = b) := by
+  intro a b lt
+  cases a
+  cases b
+  trivial
+  intro
+  trivial
+  cases b
+  intro
+  trivial
+  rw [lt_inc] at lt
+  rw [nat.eq_inc_irr]
+  apply nat.lt_to_ne
   trivial
 
 theorem nat.lt_is_le : ∀ a b: nat, (a < b) -> (a <= b) := by
@@ -177,13 +178,13 @@ theorem nat.a_lt_inc_a : ∀ a: nat, a < nat.inc a := by
   intro a
   match a with
   | nat.zero => trivial
-  | nat.inc a₀ => rw [← nat.lt_inc]; apply nat.a_lt_inc_a
+  | nat.inc a₀ => rw [nat.lt_inc]; apply nat.a_lt_inc_a
 
 theorem nat.a_le_inc_a : ∀ a: nat, a <= nat.inc a := by
   intro a
   match a with
   | nat.zero => trivial
-  | nat.inc a₀ => rw [← nat.le_inc]; apply nat.a_le_inc_a
+  | nat.inc a₀ => rw [nat.le_inc]; apply nat.a_le_inc_a
  
 
 theorem nat.lt_to_nat : ∀ a b: nat, a < b <-> toNat a < toNat b := by
@@ -204,7 +205,7 @@ theorem nat.lt_to_nat : ∀ a b: nat, a < b <-> toNat a < toNat b := by
         | nat.inc b₀ => apply nat.zero_lt_inc
       | nat.inc a₀ => match b with
         | nat.inc b₀ =>
-          apply nat.lt_to_inc_lt
+          rw [nat.lt_inc]
           unfold toNat at a_lt_b
           have x := Nat.lt_of_succ_lt_succ a_lt_b
           have y := (nat.lt_to_nat a₀ b₀).mpr x
@@ -219,8 +220,7 @@ theorem nat.le_trans : ∀ {{a b c: nat}}, a <= b -> b <= c -> a <= c := by
     | nat.inc b₀ => match c with
       | nat.zero => have _ := nat.le_inc_zero _ b_le_c; contradiction
       | nat.inc c₀ =>
-
-      rw [←nat.le_inc] at *
+      rw [nat.le_inc] at *
       exact nat.le_trans a_le_b b_le_c
 
 theorem nat.lt_trans : ∀ {{a b c: nat}}, a < b -> b < c -> a < c := by
@@ -234,8 +234,7 @@ theorem nat.lt_trans : ∀ {{a b c: nat}}, a < b -> b < c -> a < c := by
     | nat.inc b₀ => match a with
       | nat.zero => apply nat.zero_lt_inc
       | nat.inc a₀ =>
-
-      rw [←nat.lt_inc] at *
+      rw [nat.lt_inc] at *
       exact nat.lt_trans a_lt_b b_lt_c
 
 def nat.compare_or_eq (a b: nat) : Decidable (a <= b) :=
@@ -248,7 +247,7 @@ def nat.compare_or_eq (a b: nat) : Decidable (a <= b) :=
       contradiction
     )
     | nat.inc b₀ =>
-      by rw [←@nat.le_inc a₀ b₀]; exact (nat.compare_or_eq a₀ b₀)
+      by rw [@nat.le_inc a₀ b₀]; exact (nat.compare_or_eq a₀ b₀)
 
 def nat.compare (a b: nat) : Decidable (a < b) :=
 
@@ -262,7 +261,7 @@ def nat.compare (a b: nat) : Decidable (a < b) :=
       contradiction
     )
     | nat.inc b₀ =>
-      by rw [←@nat.lt_inc a₀ b₀]; exact (nat.compare a₀ b₀)
+      by rw [@nat.lt_inc a₀ b₀]; exact (nat.compare a₀ b₀)
 
 def nat.compare_eq (a b: nat) : Decidable (a = b) :=
 

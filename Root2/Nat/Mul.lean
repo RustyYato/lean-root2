@@ -1,4 +1,4 @@
-import Root2.Nat.Add
+import Root2.Nat.Add.Cmp
 import Root2.Nat.Cmp
 
 @[simp]
@@ -6,40 +6,29 @@ def nat.mul (a b : nat) := match a with
   | nat.zero => nat.zero
   | nat.inc n => add b (mul n b)
 
-@[simp]
 theorem nat.mul_zero (a: nat) : mul zero a = zero := by
-  unfold mul
-  simp
+  trivial
 
-@[simp]
 theorem nat.mul_zero_r (a: nat) : mul a zero = zero := by
-  unfold mul
   match a with
-    | nat.zero => simp
+    | nat.zero => trivial
     | nat.inc a₀ => simp; apply nat.mul_zero_r
 
-@[simp]
 theorem nat.mul_one (a: nat) : mul (inc zero) a = a := by
   unfold mul
   rw [nat.mul_zero a, nat.add_comm, nat.add_zero]
 
-@[simp]
 theorem nat.mul_one_r (a: nat) : mul a (inc zero) = a := by
-  unfold mul
   match a with
-  | nat.zero => simp
-  | nat.inc a₀ => simp; apply nat.mul_one_r
+  | nat.zero => trivial
+  | nat.inc a₀ => simp; rw [nat.mul_one_r a₀]
 
-@[simp]
 theorem nat.mul_inc (a b: nat) : mul (inc b) a = add a (mul b a) := by
-  simp
+  trivial
 
-@[simp]
 theorem nat.mul_inc_r (a b: nat) : mul a (inc b) = add a (mul a b) := by
-  unfold mul
-  simp
   match a with
-  | nat.zero => simp
+  | nat.zero => trivial
   | nat.inc a₀ =>
     simp
     rw [nat.add_perm2, ←nat.add_perm0, nat.add_irr]
@@ -49,48 +38,48 @@ theorem nat.mul_irr_r {{a b c: nat}} : b = c -> mul a b = mul a c := by
   intro b_eq_c
   rw [b_eq_c]
 
-@[simp]
 theorem nat.mul_irr_l {{a b c: nat}} (a_gt_zero: nat.zero < a) : mul a b = mul a c -> b = c := by
-  match a with
-  | nat.zero => contradiction
-  | nat.inc a₀ => simp; match b with
-    | nat.zero =>
-      simp
-      intro zero_eq_ac
-      rw [nat.add_comm] at zero_eq_ac
-      have ⟨ _, c_eq_zero ⟩ := nat.add_ab_eq_zero (mul a₀ c) c (Eq.symm zero_eq_ac)
-      exact (Eq.symm c_eq_zero)
-    | nat.inc b₀ => match c with
-      | nat.zero => simp
-      | nat.inc c₀ => 
-        simp
-        rw [←nat.add_perm7, ←nat.add_perm7 a₀ c₀, nat.add_irr]
-        rw [←nat.mul_inc, ←nat.mul_inc]
-        intro x
-        have y := nat.mul_irr_l a_gt_zero x
-        assumption
+  match b with
+  | nat.zero => 
+  rw [nat.mul_zero_r]
+  cases c
+  rw [nat.mul_zero_r]
+  exact id
+  rw [nat.mul_inc_r]
+  intro x
+  let _ := nat.lt_to_ne ((nat.add_gt_zero a_gt_zero) _) x
+  contradiction
+  | nat.inc b₀ =>
+  rw [nat.mul_inc_r]
+  match c with
+  | nat.zero =>
+  rw [nat.mul_zero_r]
+  intro x
+  let _ := nat.lt_to_ne ((nat.add_gt_zero a_gt_zero) _) (x.symm)
+  contradiction
+  | nat.inc c₀ =>
+  rw [nat.mul_inc_r, nat.add_irr, nat.eq_inc_irr]
+  apply nat.mul_irr_l
+  assumption
 
 theorem nat.mul_comm (a b: nat) : mul a b = mul b a := by
-  match a with
-  | nat.zero => match b with
-    | nat.zero => simp
-    | nat.inc b₀ =>
-      unfold mul
-      simp
-  | nat.inc a₀ => match b with
-    | nat.zero => simp
-    | nat.inc b₀ => 
-      rw  [nat.mul_inc, nat.mul_inc]
-      rw  [nat.mul_inc_r, nat.mul_inc_r]
-      simp
-      rw [←nat.add_perm7, nat.add_irr, nat.add_irr]
-      apply nat.mul_comm
+  cases a
+  rw [nat.mul_zero, nat.mul_zero_r]
+  rw [nat.mul_inc, nat.mul_inc_r]
+  rw [nat.add_irr]
+  apply nat.mul_comm
 
-@[simp]
-theorem nat.add_distr (a b c: nat) : mul a (add b c) = add (mul a b) (mul a c) := by
-  match b with
-  | nat.zero => simp
-  | nat.inc b₀ => simp; rw [←nat.add_perm0, nat.add_irr]; simp; apply nat.add_distr
+theorem nat.mul_add (a b c: nat) : mul a (add b c) = add (mul a b) (mul a c) := by
+  match a with
+  | nat.zero =>
+  repeat rw [nat.mul_zero]
+  trivial
+  | nat.inc a₀ =>
+  rw [nat.mul_inc, nat.mul_add a₀, nat.mul_inc, nat.mul_inc]
+  rw [←nat.add_perm0 b, ←nat.add_perm0, nat.add_irr, ←nat.add_perm7]
+
+theorem nat.add_mul (a b c: nat) : mul (add a b) c = add (mul a c) (mul b c) := by
+  rw [nat.mul_comm, nat.mul_add, nat.mul_comm c, nat.mul_comm c]
 
 theorem nat.mul_assoc (a b c: nat) : mul a (mul b c) = mul (mul a b) c := by
   match a with
@@ -101,12 +90,7 @@ theorem nat.mul_assoc (a b c: nat) : mul a (mul b c) = mul (mul a b) c := by
       simp
   | nat.inc a₀ => 
     simp
-    rw [nat.mul_comm (add _ _) c]
-    simp
-    rw [nat.mul_comm c b]
-    simp
-    rw [nat.mul_comm c (mul _ _)]
-    apply nat.mul_assoc
+    rw [nat.add_mul, nat.add_irr, nat.mul_assoc a₀]
 
 theorem nat.mul_perm0 (a b c: nat) : mul a (mul b c) = mul (mul a b) c := by
   apply nat.mul_assoc
