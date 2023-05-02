@@ -4,7 +4,7 @@ import Root2.Divisible.DivRem
 import Lean
 
 @[simp]
-def nat.prime_cond (n m: nat) : Prop := (¬divisible n m) ∨  m = nat.zero.inc ∨ n = m
+def nat.prime_cond (n m: nat) : Prop := ((¬divisible n m) ∨ m = nat.zero.inc ∨ n = m) ∧ n ≠ nat.zero.inc
 @[simp]
 def nat.prime (n: nat) : Prop := ∀ m, prime_cond n m
 @[simp]
@@ -19,6 +19,13 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
     intro m_lt_zero
     contradiction
   | nat.inc o₀ =>
+    match n.compare_eq nat.zero.inc with
+    | .isTrue _ =>
+      apply Decidable.isFalse
+      intro prime_until
+      have ⟨ _, _ ⟩  := prime_until nat.zero (nat.zero_lt_inc _)
+      contradiction
+    | .isFalse _ => 
     match n.check_prime_inc o₀ with
     | Decidable.isTrue prev =>
       match n.is_divisible o₀ with
@@ -39,8 +46,10 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
             have x := nat.le_le_to_eq m_lt_o₀_inc m_not_lt_o₀
             rw [o₀_is_one] at x
             unfold prime_cond
+            apply And.intro
             apply Or.inr
             apply Or.inl
+            assumption
             assumption
         | Decidable.isFalse o₀_not_one =>
         match n.compare_eq o₀ with
@@ -59,13 +68,15 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
             have x := nat.le_le_to_eq m_not_lt_o₀ m_lt_o₀_inc
             rw [←o₀_is_n] at x
             unfold prime_cond
+            apply And.intro
             apply Or.inr
             apply Or.inr
+            assumption
             assumption
         | Decidable.isFalse o₀_not_n =>
         apply Decidable.isFalse
         intro prf
-        match prf o₀ (nat.a_lt_inc_a _) with
+        match (prf o₀ (nat.a_lt_inc_a _)).left with
         | Or.inl a => contradiction
         | Or.inr (Or.inl a) => contradiction
         | Or.inr (Or.inr a) => contradiction
@@ -74,8 +85,7 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
         unfold prime_until
         intro m m_lt_inc_o₀
         unfold prime_until prime_cond at *
-
-
+        apply And.intro
         match m.compare_eq nat.zero.inc with
         | Decidable.isTrue _ => apply Or.inr; apply Or.inl; assumption
         | Decidable.isFalse _ => match n.compare_eq m with
@@ -84,7 +94,7 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
         | Decidable.isTrue h₂ =>
           apply Or.inl
           have x := prev m h₂
-          match x with
+          match x.left with
           | Or.inl _ => assumption
           | Or.inr (Or.inl _) => contradiction
           | Or.inr (Or.inr _) => contradiction
@@ -95,6 +105,7 @@ def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
           rw [←o₀_eq_m]
           apply Or.inl
           assumption
+        assumption
     | Decidable.isFalse prev =>
       apply Decidable.isFalse
       intro prf
@@ -117,17 +128,21 @@ instance nat.is_prime (n: nat) : Decidable (nat.prime n) := by
       have x := h m (nat.lt_trans m_le_n (nat.lt_trans (nat.a_lt_inc_a _) (nat.a_lt_inc_a _)))
       assumption
     | Decidable.isFalse n_lt_m =>
+      unfold nat.prime_until nat.prime_cond divisible at h
+      have := h nat.zero.inc.inc
+      repeat rw [nat.lt_inc_irr] at this
+      let ⟨ h₀, h₁ ⟩ := h nat.zero.inc.inc (nat.zero_lt_inc n)
+      apply And.intro
       apply Or.inl
       intro divis
       match n with
       | nat.zero =>
-        unfold nat.prime_until nat.prime_cond divisible at h
-        match h nat.zero.inc.inc (nat.a_lt_inc_a _) with
+        match h₀ with
         | Or.inl d => exact d ⟨ nat.zero, by rw [nat.mul_zero_r] ⟩ 
         | Or.inr (Or.inl h) => rw [nat.eq_inc_irr] at h; contradiction
         | Or.inr (Or.inr h) => contradiction
-      | nat.inc _ =>
-      exact n_lt_m (divis.is_le (nat.zero_lt_inc _))
+      | nat.inc _ => exact n_lt_m (divis.is_le (nat.zero_lt_inc _))
+      assumption
   | Decidable.isFalse h =>
     apply Decidable.isFalse
     intro prime
