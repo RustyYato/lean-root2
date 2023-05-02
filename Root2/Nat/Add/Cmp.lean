@@ -13,7 +13,7 @@ theorem nat.le_add_irr (a b c: nat) : (add a b <= add a c) = (b <= c) := by
   | nat.zero => simp
   | nat.inc a₀ =>
   simp
-  rw [nat.le_inc_irr, nat.le_add_irr a₀]
+  apply nat.le_add_irr a₀
 
 theorem nat.add_imp_le {{a b c: nat}} : add a b <= c -> b <= c := by
   match a with

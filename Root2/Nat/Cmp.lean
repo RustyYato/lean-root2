@@ -1,5 +1,6 @@
 import  Root2.Nat
 
+@[simp]
 def nat.less (a b: nat) : Prop :=
   match a with
     | nat.zero => match b with
@@ -9,6 +10,7 @@ def nat.less (a b: nat) : Prop :=
       | nat.zero => False
       | nat.inc b₀ => less a₀ b₀
 
+@[simp]
 def nat.less_eq (a b: nat) : Prop :=
   match a with
     | nat.zero => True
@@ -16,8 +18,11 @@ def nat.less_eq (a b: nat) : Prop :=
       | nat.zero => False
       | nat.inc b₀ => less_eq a₀ b₀
 
+@[simp]
 instance : LT nat where
   lt := nat.less
+
+@[simp]
 instance : LE nat where
   le := nat.less_eq
 
