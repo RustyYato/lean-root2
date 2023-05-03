@@ -1,192 +1,288 @@
 import Root2.Divisible
 import Root2.DivRem
 import Root2.Divisible.DivRem
+import Root2.Nat.Mul.Cmp
 import Lean
 
 @[simp]
 def nat.prime_cond (n m: nat) : Prop := ((¬divisible n m) ∨ m = nat.zero.inc ∨ n = m) ∧ n ≠ nat.zero.inc
 @[simp]
 def nat.prime (n: nat) : Prop := ∀ m, prime_cond n m
+
+@[simp]
+def nat.is_factor (n m: nat) := (divisible n m ∧ m ≠ nat.zero.inc ∧ n ≠ m) ∨ n = nat.zero.inc
+@[simp]
+def nat.composite (n: nat) : Prop := ∃ m, nat.is_factor n m
+
 @[simp]
 def nat.prime_until (n o: nat) : Prop := ∀ m, m < o -> prime_cond n m
 
-def nat.check_prime_inc (n o: nat) : Decidable (nat.prime_until n o) := by
-  match h:o with
-  | nat.zero =>
-    apply Decidable.isTrue
-    intro m
-    have x := nat.not_lt_zero m
-    intro m_lt_zero
+@[simp]
+def nat.has_smaller_factor (n o: nat) : Prop := ∃ m, m <= o ∧ is_factor n m
+
+inductive PrimeClassifier (n: nat) where
+| Prime : nat.prime n -> ¬nat.composite n -> PrimeClassifier n
+| Composite : ¬ nat.prime n -> nat.composite n -> PrimeClassifier n
+
+theorem not_prime_and_composite {{n:nat}} (p: nat.prime n) (c: nat.composite n) : False := by
+  let ⟨ m, cond ⟩ := c
+  let ⟨ divis_cond, n_not_one ⟩ := p m
+
+  match cond with
+  | .inl cond₀ => 
+    let ⟨ divis, ⟨ m_ne_one, m_ne_n ⟩  ⟩ := cond₀
+    match divis_cond with
+    | .inl con => contradiction
+    | .inr (.inl con) => contradiction
+    | .inr (.inr con) => contradiction
+  | .inr x => contradiction
+
+theorem prime_implies_not_composite {{n:nat}} (p: nat.prime n) : ¬ nat.composite n := 
+  fun c => not_prime_and_composite p c
+theorem composite_implies_not_prime {{n:nat}} (c: nat.composite n) : ¬ nat.prime n := 
+  fun p => not_prime_and_composite p c
+
+def nat.search_factors (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidable (nat.has_smaller_factor n x) := by
+  match h₀:n with
+  | nat.inc (nat.inc n₀) => 
+  match h₁:x with
+  | nat.zero => 
+    apply Decidable.isFalse
+    intro no_smaller_factor
+    have ⟨ x, ⟨ x_le_zero, zero_divides_n ⟩  ⟩ := no_smaller_factor
+    have x_eq_zero := nat.le_zero x x_le_zero
+    rw [x_eq_zero] at zero_divides_n
+    match zero_divides_n with
+    | .inl zero_factor =>
+    have ⟨ ⟨ m, divis_zero ⟩, ⟨ _, _ ⟩ ⟩  := zero_factor
+    rw [nat.mul_zero] at divis_zero
     contradiction
-  | nat.inc o₀ =>
-    match n.compare_eq nat.zero.inc with
-    | .isTrue _ =>
+  | nat.inc nat.zero =>
+    apply Decidable.isFalse
+    intro no_smaller_factor
+    have ⟨ q, ⟨ q_le_one, q_divides_n ⟩  ⟩ := no_smaller_factor
+    match q_divides_n with
+    | .inl q_factor =>
+    have ⟨ ⟨ m, divis_q ⟩, ⟨ _, _ ⟩ ⟩  := q_factor
+    match q with
+    | nat.zero => contradiction
+    | nat.inc nat.zero => contradiction
+    | nat.inc (nat.inc _) => contradiction
+  | nat.inc (nat.inc x₀) =>
+    rw [←h₀] at n_gt_one
+    match x₀.inc.search_factors n n_gt_one with
+    | .isTrue smaller =>
+      apply Decidable.isTrue
+      have ⟨ m, ⟨ m_le_x₀, is_factor_n_m ⟩  ⟩  := smaller
+      exists m
+      apply And.intro
+      exact (nat.le_trans m_le_x₀ (nat.a_le_inc_a _))
+      rw [← h₀]
+      assumption
+    | .isFalse no_smaller =>
+    match n.compare_eq x with
+    | .isTrue n_eq_x =>
+      rw [←h₀, ←h₁]
       apply Decidable.isFalse
-      intro prime_until
-      have ⟨ _, _ ⟩  := prime_until nat.zero (nat.zero_lt_inc _)
-      contradiction
-    | .isFalse _ => 
-    match n.check_prime_inc o₀ with
-    | Decidable.isTrue prev =>
-      match n.is_divisible o₀ with
-      | Decidable.isTrue divis =>
-        match o₀.compare_eq nat.zero.inc with
-        | Decidable.isTrue o₀_is_one =>
-          apply Decidable.isTrue
-          unfold prime_until at *
-          intro m
-          intro m_lt_o₀_inc
-          have x := prev m
-          match m.compare_lt o₀ with
-          | Decidable.isTrue m_lt_o₀ => exact (x m_lt_o₀)
-          | Decidable.isFalse m_not_lt_o₀ =>
-            rw [nat.not_lt_is_sym_le_op] at m_not_lt_o₀
-            clear x divis prev h
-            rw [nat.lt_inc_to_le] at m_lt_o₀_inc
-            have x := nat.le_le_to_eq m_lt_o₀_inc m_not_lt_o₀
-            rw [o₀_is_one] at x
-            unfold prime_cond
-            apply And.intro
-            apply Or.inr
-            apply Or.inl
-            assumption
-            assumption
-        | Decidable.isFalse o₀_not_one =>
-        match n.compare_eq o₀ with
-        | Decidable.isTrue o₀_is_n =>
-          apply Decidable.isTrue
-          unfold prime_until at *
-          intro m
-          intro m_lt_o₀_inc
-          have x := prev m
-          match m.compare_lt o₀ with
-          | Decidable.isTrue m_lt_o₀ => exact (x m_lt_o₀)
-          | Decidable.isFalse m_not_lt_o₀ =>
-            rw [nat.not_lt_is_sym_le_op] at m_not_lt_o₀
-            clear x divis prev h
-            rw [nat.lt_inc_to_le] at m_lt_o₀_inc
-            have x := nat.le_le_to_eq m_not_lt_o₀ m_lt_o₀_inc
-            rw [←o₀_is_n] at x
-            unfold prime_cond
-            apply And.intro
-            apply Or.inr
-            apply Or.inr
-            assumption
-            assumption
-        | Decidable.isFalse o₀_not_n =>
-        apply Decidable.isFalse
-        intro prf
-        match (prf o₀ (nat.a_lt_inc_a _)).left with
-        | Or.inl a => contradiction
-        | Or.inr (Or.inl a) => contradiction
-        | Or.inr (Or.inr a) => contradiction
-      | Decidable.isFalse divis =>
-        apply Decidable.isTrue
-        unfold prime_until
-        intro m m_lt_inc_o₀
-        unfold prime_until prime_cond at *
+      intro smaller_factor
+      have ⟨ q, ⟨ q_le_x, is_factor_n_q ⟩ ⟩ := smaller_factor
+      match is_factor_n_q with
+      | .inl h =>
+        have ⟨ _, ⟨ _, n_ne_q ⟩ ⟩ := h
+        rw [n_eq_x] at n_ne_q
+        have q_lt_x := nat.ne_and_le_to_lt (Ne.symm n_ne_q) q_le_x
+        apply no_smaller
+        exists q
+        rw [h₁, nat.lt_inc_to_le] at q_lt_x
         apply And.intro
+        assumption
+        assumption
+      | .inr h => 
+        rw [h₀] at h
+        rw [nat.eq_inc_irr] at h
+        contradiction
+    | .isFalse n_ne_x =>
+    match n.is_divisible x with
+    | .isTrue divis_x =>
+      rw [←h₀, ←h₁]
+      apply Decidable.isTrue
+      exists x
+      apply And.intro
+      apply nat.le_id
+      apply Or.inl
+      apply And.intro
+      assumption
+      apply And.intro
+      rw [h₁]
+      intro x
+      rw [nat.eq_inc_irr] at x
+      contradiction
+      intro x
+      contradiction
+    | .isFalse not_divis_x =>
+      apply Decidable.isFalse
+      rw [←h₀, ←h₁]
+      intro smaller_factor
+      have ⟨ q, ⟨ q_le_x, is_factor_n_q ⟩ ⟩ := smaller_factor
+      match q.compare_eq x with
+      | .isTrue q_eq_x =>
+        rw [q_eq_x] at is_factor_n_q
+        match is_factor_n_q with
+        | .inl h =>
+          have ⟨ _, _ ⟩ := h
+          contradiction
+        | .inr h =>
+          rw [h₀, nat.eq_inc_irr] at h
+          contradiction
+      | .isFalse h =>
+        have q_lt_x := nat.ne_and_le_to_lt (Ne.intro h) q_le_x
+        apply no_smaller
+        unfold has_smaller_factor
+        exists q
+        rw [h₁, nat.lt_inc_to_le] at q_lt_x
+        apply And.intro
+        assumption
+        assumption
+
+instance nat.classify_prime : PrimeClassifier n := by
+  match h:n with
+  | nat.zero =>
+    apply PrimeClassifier.Composite
+    {
+      -- zero is not prime
+      intro prime
+      have ⟨ not_divis, _ ⟩  := prime nat.zero.inc.inc
+      match not_divis with
+      | .inl not_divis =>
+      apply not_divis
+      apply divisible.zero
+    }
+    {
+      -- zero is composite
+      exists nat.zero.inc.inc
+      simp
+      exists nat.zero
+    }
+  | nat.inc nat.zero =>
+    apply PrimeClassifier.Composite
+    {
+      -- one is not prime
+      intro prime
+      have ⟨ _, _ ⟩  := prime nat.zero
+      contradiction
+    }
+    {
+      -- one is composite
+      simp
+      exists nat.zero
+    }
+  | nat.inc (nat.inc n₀) =>
+  have has_smaller_factor := n.search_factors n (by
+    rw [h, nat.lt_inc_irr]
+    apply nat.zero_lt_inc
+    )
+  rw [←h]
+  match has_smaller_factor with
+  | .isTrue smaller_factor =>
+    apply PrimeClassifier.Composite
+    all_goals have ⟨ m, ⟨ _, prf ⟩  ⟩ := smaller_factor
+    {
+      -- n is not prime
+      intro prime
+      have ⟨ not_divis, _ ⟩  := prime m
+      unfold nat.is_factor at prf
+
+      match prf with
+      | .inr prf => rw [prf] at h; contradiction
+      | .inl prf => 
+      have ⟨ divi, m_not_one, m_not_n ⟩ := prf 
+      -- cases not_divis <;> contradiction
+      match not_divis with
+      | .inl not_divis => contradiction
+      | .inr (.inl x) => contradiction
+      | .inr (.inr x) => contradiction
+    }
+    {
+      -- n is composite
+      exists m
+    }
+  | .isFalse no_smaller_factor =>
+    apply PrimeClassifier.Prime
+    {
+      -- n is prime
+      intro m
+      unfold nat.prime_cond
+      apply And.intro
+      {
+        unfold nat.has_smaller_factor nat.is_factor at no_smaller_factor
+        match n.compare_eq m with
+        | .isTrue n_eq_m =>
+          repeat apply Or.inr
+          assumption
+        | .isFalse n_ne_m =>
         match m.compare_eq nat.zero.inc with
-        | Decidable.isTrue _ => apply Or.inr; apply Or.inl; assumption
-        | Decidable.isFalse _ => match n.compare_eq m with
-        | Decidable.isTrue _ => apply Or.inr; apply Or.inr; assumption
-        | Decidable.isFalse _ => match m.compare_lt o₀ with
-        | Decidable.isTrue h₂ =>
-          apply Or.inl
-          have x := prev m h₂
-          match x.left with
-          | Or.inl _ => assumption
-          | Or.inr (Or.inl _) => contradiction
-          | Or.inr (Or.inr _) => contradiction
-        | Decidable.isFalse h =>
-          rw [nat.not_lt_is_sym_le_op] at h
-          rw [nat.lt_inc_to_le] at m_lt_inc_o₀
-          have o₀_eq_m := nat.le_le_to_eq h m_lt_inc_o₀
-          rw [←o₀_eq_m]
+        | .isTrue m_eq_one =>
+          apply Or.inr
           apply Or.inl
           assumption
-        assumption
-    | Decidable.isFalse prev =>
-      apply Decidable.isFalse
-      intro prf
-      exact prev (by
-        intro m₀ m₀_lt_o₀
-        have y := prf m₀ (nat.lt_trans m₀_lt_o₀ (nat.a_lt_inc_a o₀))
-        assumption
-      )
-
-instance nat.is_prime (n: nat) : Decidable (nat.prime n) := by
-  match nat.check_prime_inc n n.inc.inc.inc with
-  | Decidable.isTrue h =>
-    apply Decidable.isTrue
-    intro m
-    unfold nat.prime_cond
-    match m.compare_le n with
-    | Decidable.isTrue m_le_n =>
-      unfold nat.prime_until at *
-      rw [←nat.lt_inc_to_le] at m_le_n
-      have x := h m (nat.lt_trans m_le_n (nat.lt_trans (nat.a_lt_inc_a _) (nat.a_lt_inc_a _)))
-      assumption
-    | Decidable.isFalse n_lt_m =>
-      unfold nat.prime_until nat.prime_cond divisible at h
-      have := h nat.zero.inc.inc
-      repeat rw [nat.lt_inc_irr] at this
-      let ⟨ h₀, h₁ ⟩ := h nat.zero.inc.inc (nat.zero_lt_inc n)
+        | .isFalse m_ne_one =>
+          apply Or.inl
+          intro divis
+          apply no_smaller_factor
+          exists m
+          rw [h] at divis
+          rw [h]
+          have _ := divis.is_le (nat.zero_lt_inc _)
+          apply And.intro
+          assumption
+          apply Or.inl
+          apply And.intro
+          assumption
+          apply And.intro
+          assumption
+          rw [←h]
+          assumption
+      }
+      intro n_eq_one
+      rw [n_eq_one, nat.eq_inc_irr] at h
+      contradiction
+    }
+    {
+      -- n isn't composite
+      intro c
+      apply no_smaller_factor
+      have ⟨ m, prf ⟩ := c
+      exists m
+      match prf with
+      | .inr h₀ =>
+        rw [h₀] at h
+        rw [nat.eq_inc_irr] at h
+        contradiction
+      | .inl h₀ =>
       apply And.intro
-      apply Or.inl
-      intro divis
-      match n with
-      | nat.zero =>
-        match h₀ with
-        | Or.inl d => exact d ⟨ nat.zero, by rw [nat.mul_zero_r] ⟩ 
-        | Or.inr (Or.inl h) => rw [nat.eq_inc_irr] at h; contradiction
-        | Or.inr (Or.inr h) => contradiction
-      | nat.inc _ => exact n_lt_m (divis.is_le (nat.zero_lt_inc _))
+      have ⟨ divis_n_m, _ ⟩ := h₀
+      rw [h] at divis_n_m
+      rw [h]
+      exact (divis_n_m.is_le (nat.zero_lt_inc _))
       assumption
-  | Decidable.isFalse h =>
-    apply Decidable.isFalse
-    intro prime
-    exact h (by 
-      intro m _
-      exact prime m
-    )
+    }
 
--- theorem two_is_prime : nat.prime (nat.inc (nat.inc nat.zero)) := by
---   intro m divis
---   match m with
---   | nat.zero =>
---     simp
---     have ⟨ _, cs ⟩ := divis
---     simp at cs
---   | nat.inc m₀ =>
---     simp
---     match m₀ with
---     | nat.zero => 
---       simp at divis
---       have ⟨ c, cs ⟩ := divis
---       simp at cs
---       exact (Or.inl rfl)
---     | nat.inc m₁ =>
---       match m₁ with
---       | nat.zero =>
---         exact (Or.inr rfl)
---       | nat.inc m₂ =>
---         have is_le := divis.is_le (nat.zero_lt_inc _)
---         contradiction
+instance nat.is_composite {n: nat} : Decidable (nat.composite n) :=
+  match n.classify_prime with
+  | .Prime _ not_composite => Decidable.isFalse not_composite
+  | .Composite _ composite => Decidable.isTrue composite
 
--- theorem divisible.split_mul_contra (p: nat.prime n) (a_not_divis_n: ¬(divisible a n)) (b_not_divis_n: ¬(divisible b n)): ¬(divisible (nat.mul a b) n) := by
---   intro ab_divisible_n
---   have a_not_divis_n := a_not_divis_n.not_divisible_def
---   have b_not_divis_n := b_not_divis_n.not_divisible_def
---   unfold not_divisible at *
+instance nat.is_prime {n: nat} : Decidable (nat.prime n) :=
+  match n.classify_prime with
+  | .Prime prime _ => Decidable.isTrue prime
+  | .Composite not_prime _ => Decidable.isFalse not_prime
 
---   admit
+instance not_prime_implies_composite {{n:nat}} (p: ¬ nat.prime n) : nat.composite n := by
+  match n.classify_prime with
+  | .Prime prime _ => contradiction
+  | .Composite _ composite => exact composite
 
--- theorem divisible.split_mul (divis_ab_n: divisible (nat.mul a b) n) (p: nat.prime n) : (divisible a n) ∨ (divisible b n) :=
---   match is_divisible a n with
---   | Decidable.isTrue a_divisible_by_n => Or.inl a_divisible_by_n
---   | Decidable.isFalse a_not_divisible_by_n => match is_divisible b n with
---     | Decidable.isTrue b_divisible_by_n => Or.inr b_divisible_by_n
---     | Decidable.isFalse b_not_divisible_by_n => by
---       have _ := divisible.split_mul_contra p a_not_divisible_by_n b_not_divisible_by_n
---       contradiction
+instance not_composite_implies_prime {{n:nat}} (p: ¬ nat.composite n) : nat.prime n := by
+  match n.classify_prime with
+  | .Prime prime _ => exact prime
+  | .Composite _ composite => contradiction
