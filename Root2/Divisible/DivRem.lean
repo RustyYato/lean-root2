@@ -1,5 +1,6 @@
 import Root2.Divisible
 import Root2.DivRem
+import Root2.Nat.Reduction
 
 theorem divrem.divisible_quocient (d: divrem a b) (divis: divisible a b) : a = nat.mul b d.quocient := by
   have ⟨ c, a_eq_bc ⟩ := divis
@@ -84,3 +85,39 @@ def nat.is_divisible (a b: nat) : Decidable (divisible a b) := by
       have x := d.divisible_remainder divis
       rw [rem] at x
       contradiction
+
+inductive Quocient (n m: nat) :=
+  | Quocient : ∀ q, n = nat.mul m q -> Quocient n m
+
+def divisible.find_quocient
+  (divis: divisible a b)
+  (a_gt_zero : nat.zero < a)
+  (x: nat)
+  (no_multiples_after: ∀n, x <= n -> a ≠ nat.mul b n) : Quocient a b :=
+  match x with
+  | .zero =>
+    False.elim (by
+      have ⟨ c, a_eq_bc ⟩ := divis
+      have c_not_multiple := no_multiples_after c (nat.zero_le _)
+      contradiction
+    )
+  | .inc x₀ => by
+    match a.compare_eq (nat.mul b x₀) with
+    | .isTrue _ =>
+      apply Quocient.Quocient x₀
+      assumption
+    | .isFalse h₀ =>
+      exact divis.find_quocient a_gt_zero x₀ (by
+        have := nat.bounded_reduction_step (λq => ¬ (a = nat.mul b q)) x₀ h₀ no_multiples_after 
+        assumption
+      )
+
+def divisible.quocient (divis: divisible a b) (a_gt_zero : nat.zero < a) : Quocient a b := by
+  have b_gt_zero := divis.is_nonzero a_gt_zero
+  exact divis.find_quocient a_gt_zero a.inc (by
+    intro n a_le_n a_eq_bn
+    rw [a_eq_bn] at a_le_n
+    have n_le_mul := @nat.a_le_a_mul_b n b b_gt_zero
+    rw [nat.mul_comm] at n_le_mul
+    exact (nat.comp_dec (nat.a_lt_inc_a _) (nat.le_trans a_le_n n_le_mul))
+  )

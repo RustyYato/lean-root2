@@ -89,9 +89,12 @@ theorem nat.eq_inc_irr : nat.inc a = nat.inc b <-> a = b := by
 
 theorem nat.lt_inc_irr (a b: nat) : (inc a < inc b) = (a < b) := by
   trivial
- 
+
 theorem nat.le_inc_irr (a b: nat) : (inc a <= inc b) = (a <= b) := by
   trivial
+
+theorem nat.ne_inc_irr (a b: nat) : (inc a ≠ inc b) = (a ≠ b) := by
+  simp
 
 theorem nat.lt_to_ne : ∀{{a b: nat}}, (a < b) -> ¬(a = b) := by
   intro a b lt
@@ -139,6 +142,16 @@ theorem nat.eq_to_le : ∀ {{a b: nat}}, a = b -> (a <= b) := by
   intro a b a_eq_b
   rw [a_eq_b]
   exact (nat.le_id b)
+
+theorem nat.ne_and_le_to_lt : ∀ {{a b: nat}}, a ≠ b -> (a <= b) -> a < b := by
+  intro a b a_ne_b a_le_b
+  match a, b with
+  | nat.zero, nat.inc b₀ => apply nat.zero_lt_inc
+  | nat.inc a₀, nat.inc b₀ => 
+      rw [nat.ne_inc_irr] at a_ne_b
+      rw [nat.le_inc_irr] at a_le_b
+      rw [nat.lt_inc_irr]
+      apply nat.ne_and_le_to_lt <;> assumption
 
 theorem nat.comp_dec {{a b: nat}} : a < b -> b <= a -> False := by
   intro a_lt_b b_le_a
@@ -189,7 +202,18 @@ theorem nat.a_le_inc_a : ∀ a: nat, a <= nat.inc a := by
   match a with
   | nat.zero => trivial
   | nat.inc a₀ => rw [nat.le_inc]; apply nat.a_le_inc_a
- 
+
+theorem nat.no_between_inc : ∀ {{a b: nat}}, a < b -> b < nat.inc a -> False := by
+  intro a b a_lt_b b_lt_inca
+  match a, b with
+  | nat.zero, nat.inc _ =>
+    rw [nat.lt_inc_irr] at b_lt_inca
+    apply nat.not_lt_zero
+    assumption
+  | nat.inc a₀, nat.inc b₀ =>
+    rw [nat.lt_inc_irr] at a_lt_b
+    rw [nat.lt_inc_irr] at b_lt_inca
+    exact no_between_inc a_lt_b b_lt_inca
 
 theorem nat.lt_to_nat : ∀ a b: nat, a < b <-> toNat a < toNat b := by
   intro a b
@@ -241,6 +265,21 @@ theorem nat.lt_trans : ∀ {{a b c: nat}}, a < b -> b < c -> a < c := by
       rw [nat.lt_inc] at *
       exact nat.lt_trans a_lt_b b_lt_c
 
+theorem nat.lt_le_trans : ∀ {{a b c: nat}}, a < b -> b <= c -> a < c := by
+  intro a b c a_lt_b b_lt_c
+  match c with
+  | nat.zero => match b with
+     | nat.zero => assumption
+     | nat.inc _ => contradiction
+  | nat.inc c₀ => match b with
+    | nat.zero => match a with
+      | nat.inc _ => contradiction
+    | nat.inc b₀ => match a with
+      | nat.zero => apply nat.zero_lt_inc
+      | nat.inc a₀ =>
+      rw [nat.lt_inc] at *
+      exact nat.lt_le_trans a_lt_b b_lt_c
+
 def nat.compare_le (a b: nat) : Decidable (a <= b) :=
   match a with
   | nat.zero => Decidable.isTrue (by trivial)
@@ -288,6 +327,11 @@ theorem nat.inc_gt_zero {{ a : nat }} : (a.inc <= nat.zero)=False := by
 theorem nat.zero_lt_all {{ a : nat }} : (a < nat.zero)=False := by
   cases a <;> trivial
 
+theorem nat.not_lt_id {{ a : nat }} : ¬(a < a) := by
+  match a with
+  | nat.zero => intro; trivial
+  | nat.inc a₀ => rw [nat.lt_inc_irr]; apply nat.not_lt_id
+
 theorem nat.lt_inc_to_le {{ a b: nat }} : (a < inc b) = (a <= b) := by
   match a with
   | nat.zero => trivial
@@ -297,3 +341,23 @@ theorem nat.lt_inc_to_le {{ a b: nat }} : (a < inc b) = (a <= b) := by
     | nat.inc b₀ =>
       rw [nat.lt_inc_irr]
       apply nat.lt_inc_to_le
+
+theorem nat.size_of_lt {{ a b : nat }} :  a < b -> sizeOf a < sizeOf b := by
+  unfold sizeOf instSizeOfNat_1 toNat
+  match a, b with
+  | nat.zero, nat.zero =>
+    split <;> (intro; contradiction)
+  | nat.zero, nat.inc b₀ => 
+    simp
+    intro
+    apply Nat.zero_lt_succ
+  | nat.inc a₀, nat.zero =>
+    intro
+    contradiction
+  | nat.inc a₀, nat.inc b₀ => 
+    rw [nat.lt_inc_irr]
+    intro inc_lt_inc
+    simp
+    apply Nat.succ_lt_succ
+    apply nat.size_of_lt
+    assumption

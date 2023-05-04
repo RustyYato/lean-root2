@@ -1,8 +1,4 @@
-import Root2.Divisible
-import Root2.DivRem
 import Root2.Divisible.DivRem
-import Root2.Nat.Mul.Cmp
-import Lean
 
 @[simp]
 def nat.prime_cond (n m: nat) : Prop := ((¬divisible n m) ∨ m = nat.zero.inc ∨ n = m) ∧ n ≠ nat.zero.inc
@@ -37,12 +33,12 @@ theorem not_prime_and_composite {{n:nat}} (p: nat.prime n) (c: nat.composite n) 
     | .inr (.inr con) => contradiction
   | .inr x => contradiction
 
-theorem prime_implies_not_composite {{n:nat}} (p: nat.prime n) : ¬ nat.composite n := 
+theorem nat.prime_implies_not_composite {{n:nat}} (p: nat.prime n) : ¬ nat.composite n := 
   fun c => not_prime_and_composite p c
-theorem composite_implies_not_prime {{n:nat}} (c: nat.composite n) : ¬ nat.prime n := 
+theorem nat.composite_implies_not_prime {{n:nat}} (c: nat.composite n) : ¬ nat.prime n := 
   fun p => not_prime_and_composite p c
 
-def nat.search_factors (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidable (nat.has_smaller_factor n x) := by
+def nat.has_smaller_factor_dec (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidable (nat.has_smaller_factor n x) := by
   match h₀:n with
   | nat.inc (nat.inc n₀) => 
   match h₁:x with
@@ -70,7 +66,7 @@ def nat.search_factors (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidable (nat.
     | nat.inc (nat.inc _) => contradiction
   | nat.inc (nat.inc x₀) =>
     rw [←h₀] at n_gt_one
-    match x₀.inc.search_factors n n_gt_one with
+    match x₀.inc.has_smaller_factor_dec n n_gt_one with
     | .isTrue smaller =>
       apply Decidable.isTrue
       have ⟨ m, ⟨ m_le_x₀, is_factor_n_m ⟩  ⟩  := smaller
@@ -177,7 +173,7 @@ instance nat.classify_prime : PrimeClassifier n := by
       exists nat.zero
     }
   | nat.inc (nat.inc n₀) =>
-  have has_smaller_factor := n.search_factors n (by
+  have has_smaller_factor := n.has_smaller_factor_dec n (by
     rw [h, nat.lt_inc_irr]
     apply nat.zero_lt_inc
     )
@@ -277,12 +273,12 @@ instance nat.is_prime {n: nat} : Decidable (nat.prime n) :=
   | .Prime prime _ => Decidable.isTrue prime
   | .Composite not_prime _ => Decidable.isFalse not_prime
 
-instance not_prime_implies_composite {{n:nat}} (p: ¬ nat.prime n) : nat.composite n := by
+instance nat.not_prime_implies_composite {{n:nat}} (p: ¬ nat.prime n) : nat.composite n := by
   match n.classify_prime with
   | .Prime prime _ => contradiction
   | .Composite _ composite => exact composite
 
-instance not_composite_implies_prime {{n:nat}} (p: ¬ nat.composite n) : nat.prime n := by
+instance nat.not_composite_implies_prime {{n:nat}} (p: ¬ nat.composite n) : nat.prime n := by
   match n.classify_prime with
   | .Prime prime _ => exact prime
   | .Composite _ composite => contradiction

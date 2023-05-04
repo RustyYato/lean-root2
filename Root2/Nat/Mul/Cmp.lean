@@ -17,3 +17,34 @@ theorem nat.mul_imp_le {{a b c: nat}} (a_nz: nat.zero < a) : mul a b <= c -> b <
     intro inc_add_le_c
     rw [nat.add_comm] at inc_add_le_c
     exact nat.add_imp_le inc_add_le_c
+
+theorem nat.mul_output_imp_le {{a b c: nat}} (c_nz: nat.zero < c) : mul a b = c -> a <= c := by
+  match b with
+  | nat.zero =>
+    rw [nat.mul_zero_r]
+    intro x
+    rw [←x] at c_nz
+    contradiction
+  | nat.inc b₀ =>
+    simp
+    intro inc_add_eq_c
+    rw [nat.mul_inc_r] at inc_add_eq_c
+    exact (nat.add_eq_imp_le inc_add_eq_c)
+
+theorem nat.mul_nonzero {{a b c: nat}} (c_nz: nat.zero < c) : mul a b = c -> nat.zero < a ∧ nat.zero < b := by
+  match a with
+  | nat.zero =>
+    rw [nat.mul_zero]
+    intro x
+    rw [←x] at c_nz
+    contradiction
+  | nat.inc a₀ =>
+    match b with
+    | nat.zero =>
+      rw [nat.mul_zero_r]
+      intro x
+      rw [←x] at c_nz
+      contradiction
+    | nat.inc b₀ =>
+    intro
+    apply And.intro <;> apply nat.zero_lt_inc

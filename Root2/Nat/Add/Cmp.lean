@@ -23,6 +23,18 @@ theorem nat.add_imp_le {{a b c: nat}} : add a b <= c -> b <= c := by
     have qq := nat.inc_le (add a₀ b) c
     exact (nat.add_imp_le (qq inc_add_le_c))
 
+theorem nat.add_eq_imp_le {{a b c: nat}} : add a b = c -> a <= c := by
+  match b with
+  | nat.zero => rw [nat.add_zero_r]; apply nat.eq_to_le
+  | nat.inc b₀ =>
+    intro inc_add_le_c
+    have q := inc_add_le_c
+    rw [nat.add_inc] at inc_add_le_c
+    have := nat.inc_le _ _ (nat.eq_to_le inc_add_le_c)
+    apply @nat.add_imp_le b₀ a c
+    rw [nat.add_comm]
+    assumption
+
 theorem nat.add_gt_zero {{a: nat}} : nat.zero < a -> ∀b, nat.zero < a.add b := by
   intro a_gt_zero
   intro b

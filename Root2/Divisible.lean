@@ -32,6 +32,20 @@ theorem divisible.is_le (divis: divisible a b) (a_nz : nat.zero < a) : b <= a :=
     apply nat.a_le_a_mul_b
     apply nat.zero_lt_inc
 
+theorem divisible.is_nonzero (divis: divisible a b) (a_nz : nat.zero < a) : nat.zero < b := by
+  match a with
+  | nat.inc a₀ =>
+  have ⟨ c, a_eq_bc ⟩ := divis
+  match b with
+  | nat.zero => rw [nat.mul_zero] at a_eq_bc; contradiction
+  | nat.inc b₀ => apply nat.zero_lt_inc
+
 theorem Not.not_divisible_def (d: ¬divisible a b): not_divisible a b := by
   intro c a_bc
   exact (d ⟨ c, a_bc ⟩)
+
+theorem divisible.mul (d: divisible a b): divisible (nat.mul a c) b := by
+  have ⟨ b₀, a_eq_bb₀ ⟩ := d
+  exists nat.mul b₀ c
+  rw [a_eq_bb₀]
+  rw [nat.mul_perm0]
