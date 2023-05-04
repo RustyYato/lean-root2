@@ -1,8 +1,6 @@
 import Root2.Divisible.DivRem
 
-@[simp]
 def nat.prime_cond (n m: nat) : Prop := ((¬divisible n m) ∨ m = nat.zero.inc ∨ n = m) ∧ n ≠ nat.zero.inc
-@[simp]
 def nat.prime (n: nat) : Prop := ∀ m, prime_cond n m
 
 @[simp]

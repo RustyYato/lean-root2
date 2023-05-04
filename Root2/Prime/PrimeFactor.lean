@@ -5,101 +5,144 @@ instance nat_gt_one {n: nat} : nat.zero.inc < nat.inc (nat.inc n) := by
   rw [nat.lt_inc_irr]
   apply nat.zero_lt_inc
 
-def nat.has_prime_factor (n: nat) {n_gt_one: nat.zero.inc < n} : ∃m, m.prime ∧ divisible n m := by
-  match n.classify_prime with
-  | .Prime prime _ =>
-    exists n
+@[simp]
+def list_product (list: List nat) : nat := match list with
+  | [] => nat.zero.inc
+  | n :: ns => nat.mul n (list_product ns)
+
+@[simp]
+def List.allP (list: List a) (P : a -> Prop) : Prop := match list with
+  | [] => True
+  | x :: xs => P x ∧ allP xs P
+
+@[simp]
+def List.anyP (list: List a) (P : a -> Prop) : Prop := match list with
+  | [] => False
+  | x :: xs => P x ∨ anyP xs P
+
+@[simp]
+def List.sorted (list: List a) (P : a -> a -> Prop) : Prop := match list with
+  | [] | [_] => True
+  | a :: b :: xs => P a b ∧ sorted (b :: xs) P
+
+inductive PrimeFactorization (n: nat) : Type :=
+  | PrimeFactors : (factors: List nat)
+    -> List.allP factors nat.prime
+    -> n = list_product factors
+    -> PrimeFactorization n 
+
+def not_zero : nat -> Prop := fun n => nat.zero < n
+
+theorem mul_list_products (a_no_zeros: a.allP not_zero) (b_no_zeros: b.allP not_zero) : nat.mul (list_product a) (list_product b) = list_product (a ++ b) := by 
+  match a with
+  | [] => simp; rw [nat.add_zero_r]
+  | a₀ :: as =>
+    simp
+    have ⟨ a₀_ne_zero, a_no_zeros ⟩ := a_no_zeros
+    have x := nat.zero
+    have y := nat.zero
+    rw [←nat.mul_perm0, nat.mul_irr a₀_ne_zero]
+    apply mul_list_products
+    assumption
+    assumption
+
+theorem all_implies {{ α: Type _ }} {{ A B: α -> Prop }} :
+  (list: List α) ->
+  list.allP A ->
+  (∀a, A a -> B a) ->
+  list.allP B := by
+  intro list all_a A_to_B
+  match list with
+  | [] => trivial
+  | x :: xs => 
+  have ⟨ Ax, Axs ⟩ := all_a
+  apply And.intro
+  exact (A_to_B _ Ax)
+  exact all_implies xs Axs A_to_B
+
+theorem concat_preserves_all {{ α: Type _ }} {{ P: α -> Prop }} {{a b: List α}} :
+  (List.allP a P) -> (List.allP b P) -> (List.allP (a ++ b) P) := by
+  intro all_a all_b
+  match a with
+  | [] => simp; assumption
+  | a₀ :: as =>
+    have ⟨ pa, pas ⟩ := all_a
+    simp
     apply And.intro
     assumption
-    exact divisible.id n
-  | .Composite _ composite =>
-    have ⟨ a, factor ⟩ := composite
-    match factor with
-    | .inr n_eq_one =>
-      rw [n_eq_one] at n_gt_one
-      contradiction
-    | .inl factor =>
-    have ⟨ ⟨ b, n_eq_ab ⟩ , ⟨ a_ne_one, n_ne_a ⟩  ⟩ := factor
-    match nat.zero.inc.compare_lt a, nat.zero.inc.compare_lt b with
-    | .isFalse h₀, .isFalse h₁ => 
-      rw [nat.not_lt_is_sym_le_op] at *
-      match a, b with
-      | nat.zero, nat.zero => simp at n_eq_ab; rw [n_eq_ab] at n_gt_one; contradiction
-      | nat.zero, nat.inc nat.zero => simp at n_eq_ab; rw [n_eq_ab] at n_gt_one; contradiction
-      | nat.inc nat.zero, nat.zero => simp at n_eq_ab; rw [n_eq_ab] at n_gt_one; contradiction
-      | nat.inc nat.zero, nat.inc nat.zero => simp at n_eq_ab; rw [n_eq_ab] at n_gt_one; contradiction
-    | .isTrue h₀, .isFalse h₁ =>
-      rw [nat.not_lt_is_sym_le_op] at *
-      match b with
-      | nat.zero => simp at n_eq_ab; rw [n_eq_ab, nat.mul_zero_r] at n_gt_one; contradiction
-      | nat.inc nat.zero => 
-        rw [nat.mul_one_r] at n_eq_ab
-        contradiction
-    | .isFalse h₀, .isTrue h₁ =>
-      rw [nat.not_lt_is_sym_le_op] at *
+    apply concat_preserves_all
+    assumption
+    assumption
+
+theorem concat_preserves_any {{ α: Type _ }} {{ P: α -> Prop }} {{a b: List α}} :
+  (List.anyP a P) ∨ (List.anyP b P) -> (List.anyP (a ++ b) P) := by
+  intro all_a_or_all_b
+  match all_a_or_all_b with
+  | .inl any_a =>
+    match a with
+    | [] => contradiction
+    | a₀ :: as =>
+      match any_a with
+      | .inl any_a₀ => 
+        apply Or.inl
+        assumption
+      | .inr any_as => 
+        apply Or.inr
+        apply concat_preserves_any
+        apply Or.inl
+        assumption
+  | .inr any_b =>
+    match b with
+    | [] => contradiction
+    | b₀ :: bs =>
       match a with
-      | nat.zero => simp at n_eq_ab; rw [n_eq_ab] at n_gt_one; contradiction
-      | nat.inc nat.zero => 
-        rw [nat.mul_one] at n_eq_ab
-        contradiction
-    | .isTrue h₀, .isTrue h₁ =>
-      have ⟨ f, f_prime, is_factor ⟩  := @has_prime_factor a h₀
-      exists f
-      apply And.intro
-      assumption
-      rw [n_eq_ab]
-      apply divisible.mul
-      assumption
-  decreasing_by {
-    simp_wf
-    apply nat.size_of_lt
-    rw [nat.mul_comm] at n_eq_ab
-    have := nat.mul_imp_le (nat.lt_trans (nat.zero_lt_inc _) h₁) (nat.eq_to_le (Eq.symm n_eq_ab))
-    apply nat.ne_and_le_to_lt
-    apply Ne.symm
-    assumption
-    assumption
-  }
+      | [] =>
+        simp
+        assumption
+      | a :: as =>
+        apply Or.inr
+        apply concat_preserves_any
+        apply Or.inr
+        assumption
 
-inductive PrimeFactorization : nat -> Type :=
-  | One : PrimeFactorization nat.zero.inc
-  | Succ : ∀{{n m: nat}},
-      nat.prime n ->
-      PrimeFactorization m
-      -> PrimeFactorization (nat.mul m n)
+def prime_gt_zero (n: nat) (_: nat.prime n) : nat.zero < n := match n with
+  | nat.inc _ => nat.zero_lt_inc _
 
-def prime_factor_list (p: PrimeFactorization n) : List nat := match p with
-  | .One => []
-  | @PrimeFactorization.Succ f _ _ p => f :: prime_factor_list p
-
+def PrimeFactorization.to_list (p: PrimeFactorization n) : List nat := match p with
+  | .PrimeFactors factors _ _ => factors
 
 instance : Repr (PrimeFactorization n) where
-  reprPrec n := reprPrec (prime_factor_list n)
+  reprPrec n := reprPrec n.to_list
 
+def PrimeFactorization.merge {{a b: nat}}
+  (pa: PrimeFactorization a)
+  (pb: PrimeFactorization b) :
+  PrimeFactorization (nat.mul a b) := by
+  match pa, pb with
+  | .PrimeFactors a_products a_primes a_product, .PrimeFactors b_products b_primes b_product =>
+    apply PrimeFactorization.PrimeFactors (a_products ++ b_products)
+    apply concat_preserves_all <;> assumption
+    {
+      rw [a_product, b_product]
+      apply mul_list_products
+      exact all_implies a_products a_primes prime_gt_zero
+      exact all_implies b_products b_primes prime_gt_zero
+    }
 
-def sorted (p: PrimeFactorization n): Prop := match p with
-  | .One => True
-  | @PrimeFactorization.Succ n₀ _ _ prev => match prev with
-    | .One => True
-    | @PrimeFactorization.Succ n₁ _ _ prev_prev => sorted prev ∧ n₁ < n₀
-
-inductive SortedPrimeFactorization (n: nat) : Type := 
-  | Factors : (p: PrimeFactorization n) -> sorted p -> SortedPrimeFactorization n
-
-def merge_factors {{a b: nat}} (pa: PrimeFactorization a) (pb: PrimeFactorization b) : PrimeFactorization (nat.mul a b) := by
-  
-  admit
-
-def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n := 
+def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n := by
   match h:n with
-  | nat.inc nat.zero => PrimeFactorization.One
-  | nat.inc (nat.inc n₀) => by
+  | nat.inc nat.zero => 
+    apply PrimeFactorization.PrimeFactors []
+    all_goals trivial
+  | nat.inc (nat.inc n₀) => 
     rw [←h]
     match n.classify_prime with
     | .Prime p _ => 
-      have factors := PrimeFactorization.Succ p PrimeFactorization.One
-      rw [nat.mul_one] at factors
+      apply PrimeFactorization.PrimeFactors [n]
+      simp
       assumption
+      simp
+      rw [nat.mul_one_r]
     | .Composite _ composite =>
       
       match n.get_factors (plus_two_gt_one h) composite with
@@ -112,11 +155,10 @@ def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n :=
       have b_factors := b.factorize b_gt_zero
 
       rw [n_eq_ab]
-      exact (merge_factors a_factors b_factors)
+      exact (a_factors.merge b_factors)
   decreasing_by {
     simp_wf
     apply nat.size_of_lt
     rw [←h] 
     assumption
   }
--- #eval prime_factor_list (factorize nat.zero.inc.inc (nat.zero_lt_inc _))
