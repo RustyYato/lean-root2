@@ -1,10 +1,15 @@
 import Root2.Prime
 
 inductive Factors : nat -> Type :=
-  | MkFactors : ∀ {{n a b: nat}}, nat.zero.inc < a -> nat.zero.inc < b ->  nat.mul a b = n -> Factors n
+  | MkFactors : ∀ {{n: nat}}  (a b: nat),
+    nat.zero.inc < a ->
+    nat.zero.inc < b ->
+    a < n ->
+    b < n ->
+    n = nat.mul a b -> Factors n
 
 def Factors.get {{n:nat}} (f: Factors n) : List nat := match f with
-  | @Factors.MkFactors _ a b _ _ _ => [a, b]
+  | @Factors.MkFactors _ a b _ _ _ _ _ => [a, b]
 
 def plus_two_gt_one : x = nat.inc (nat.inc a) -> nat.zero.inc < x := by
   intro x_eq
@@ -77,7 +82,13 @@ def search_factors
         contradiction
       | nat.inc (nat.inc q₀) =>
       rw [←h₁] at n_eq_xq
-      exact Factors.MkFactors (@plus_two_gt_one _ x₁ h₀) (plus_two_gt_one h₁) (Eq.symm n_eq_xq)
+      have a_gt_one := plus_two_gt_one h₀
+      have b_gt_one := plus_two_gt_one h₁
+      have a_ne_n := nat.mul_output_lt a_gt_one b_gt_one n_eq_xq
+      rw [nat.mul_comm] at n_eq_xq
+      have b_ne_n := nat.mul_output_lt b_gt_one a_gt_one n_eq_xq
+      rw [nat.mul_comm] at n_eq_xq
+      exact Factors.MkFactors _ _ a_gt_one b_gt_one a_ne_n b_ne_n n_eq_xq
     | .isFalse not_divis_n_x =>
       have := search_factors (nat.inc x₁) n composite n_gt_one
       exact search_factors (nat.inc x₁) n composite n_gt_one (nat.lt_trans (nat.a_lt_inc_a _) x_lt_n) (by
@@ -100,7 +111,7 @@ def search_factors
           contradiction
       )
 
-def get_factors (n: nat) (n_gt_one : nat.zero.inc < n) : n.composite -> Factors n := by
+def nat.get_factors (n: nat) (n_gt_one : nat.zero.inc < n) : n.composite -> Factors n := by
   intro composite
   match n with
   | nat.zero => contradiction

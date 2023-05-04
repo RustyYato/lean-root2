@@ -49,6 +49,16 @@ theorem nat.add_irr (a b c: nat) : (add a b = add a c) = (b = c) := by
   rw [nat.eq_inc_irr]
   apply nat.add_irr
 
+theorem nat.eq_add_const_irr (a b: nat) : (a = add a b) = (nat.zero = b) := by
+  match a with
+  | nat.zero => rw [nat.add_zero]
+  | nat.inc a₀ => rw [nat.add_inc_r, nat.eq_inc_irr]; apply nat.eq_add_const_irr
+
+theorem nat.lt_add_const_irr (a b: nat) : (a < add a b) = (nat.zero < b) := by
+  match a with
+  | nat.zero => rw [nat.add_zero]
+  | nat.inc a₀ => rw [nat.add_inc_r, nat.lt_inc_irr]; apply nat.lt_add_const_irr
+
 theorem nat.add_assoc (a b c: nat) : add a (add b c) = add (add a b) c := by
   match a with
   | nat.zero => repeat rw [nat.add_zero]

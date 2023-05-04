@@ -48,3 +48,57 @@ theorem nat.mul_nonzero {{a b c: nat}} (c_nz: nat.zero < c) : mul a b = c -> nat
     | nat.inc b₀ =>
     intro
     apply And.intro <;> apply nat.zero_lt_inc
+
+theorem nat.mul_output_ne {{a b c: nat}} (a_gt_one: nat.zero.inc < a) (b_gt_one: nat.zero.inc < b) : c =mul a b -> a ≠ c := by
+  match a with
+  | nat.zero => contradiction
+  | nat.inc nat.zero => contradiction
+  | nat.inc (nat.inc a₀) =>
+  match b with
+  | nat.zero => contradiction
+  | nat.inc nat.zero => contradiction
+  | nat.inc (nat.inc b₀) =>
+    simp
+    intro inc_add_eq_c
+    intro a_eq_c
+    rw [←a_eq_c] at inc_add_eq_c
+    rw [
+      nat.mul_inc_r,
+      nat.add_inc,
+      nat.add_inc,
+      nat.eq_inc_irr,
+      nat.eq_inc_irr,
+      nat.add_perm9 b₀,
+      ←nat.add_perm0,
+      ←nat.add_inc,
+      ←nat.add_inc,
+      nat.eq_add_const_irr
+    ] at inc_add_eq_c
+    contradiction
+
+theorem nat.mul_output_lt {{a b c: nat}} (a_gt_one: nat.zero.inc < a) (b_gt_one: nat.zero.inc < b) : c = mul a b -> a < c := by
+  match a with
+  | nat.zero => contradiction
+  | nat.inc nat.zero => contradiction
+  | nat.inc (nat.inc a₀) =>
+  match b with
+  | nat.zero => contradiction
+  | nat.inc nat.zero => contradiction
+  | nat.inc (nat.inc b₀) =>
+    simp
+    intro inc_add_eq_c
+    rw [inc_add_eq_c]
+    rw [
+      nat.mul_inc_r,
+      nat.add_inc,
+      nat.add_inc,
+      nat.lt_inc_irr,
+      nat.lt_inc_irr,
+      nat.add_perm9 b₀,
+      ←nat.add_perm0,
+      ←nat.add_inc,
+      ←nat.add_inc,
+      nat.lt_add_const_irr
+    ]
+    apply nat.zero_lt_inc
+    
