@@ -20,7 +20,7 @@ instance ord_lt [Compare α] : LT α where
   lt a b := Compare.ord a b = Order.Less
 @[simp]
 instance ord_le [Compare α] : LE α where
-  le a b := Compare.ord a b ≠ Order.Greater
+  le a b := Compare.ord a b = Order.Less ∨ Compare.ord a b = Order.Eq
 
 def Compare.ord_ne_transitive {{ α: Sort _ }} [Compare α] {{ a b c : α }} {{ o : Order }} : 
     o ≠ Order.Eq -> ord a b ≠ o -> ord b c ≠ o  -> ord a c ≠ o := by
@@ -122,7 +122,7 @@ def Compare.ord_implies_gt {{ α: Sort _ }} [Compare α] {{ a b: α }}
 
 def Compare.ord_implies_ge {{ α: Sort _ }} [Compare α] {{ a b: α }}
   (a_ge_b: ord a b ≠ Order.Less) : a >= b := by
-  exact (ord_flip_ne a_ge_b)
+  exact (ord_not_greater (ord_flip_ne a_ge_b))
 
 def Compare.ord_implies_ne {{ α: Sort _ }} [Compare α] {{ a b: α }}
   (a_gt_b: ord a b ≠ Order.Eq) : a ≠ b := by
@@ -143,7 +143,21 @@ def Compare.lt_trans {{ α: Sort _ }} [Compare α] {{ a b c: α }} :
 def Compare.le_trans {{ α: Sort _ }} [Compare α] {{ a b c: α }} :
   a <= b -> b <= c -> a <= c := by
   intro a_lt_b b_lt_c
-  exact ord_ne_transitive (Order.noConfusion) a_lt_b b_lt_c
+  cases a_lt_b <;> cases b_lt_c
+  apply Or.inl
+  apply @Compare.lt_trans _ _ a b c
+  assumption
+  assumption
+  apply Or.inl
+  have b_eq_c : b = c := Compare.ord_implies_eq (by assumption)
+  rw [←b_eq_c]
+  assumption
+  apply Or.inl
+  have a_eq_b : a = b := Compare.ord_implies_eq (by assumption)
+  rw [a_eq_b]
+  assumption
+  apply Or.inr
+  apply @Compare.ord_transitive _ _ a b c <;> assumption
 
 def Compare.gt_trans {{ α: Sort _ }} [Compare α] {{ a b c: α }} :
   a < b -> b < c -> a < c := by
@@ -155,7 +169,16 @@ def Compare.ge_trans {{ α: Sort _ }} [Compare α] {{ a b c: α }} :
 
 def dec_true : Decidable True := Decidable.isTrue True.intro
 def dec_false : Decidable False := Decidable.isFalse False.elim
- 
+
+def dec_or : Decidable A -> Decidable B -> Decidable (A ∨ B) := by
+  intro deca decb
+  cases deca <;> cases decb
+  apply Decidable.isFalse
+  intro a_or_b
+  cases a_or_b <;> contradiction
+  all_goals apply Decidable.isTrue
+  any_goals (apply Or.inr; assumption)
+  apply Or.inl; assumption
 
 instance Order.dec_eq (a b: Order) : Decidable (a = b) := by
   cases a <;> cases b <;> simp
@@ -202,7 +225,7 @@ instance [Compare α] (a b: α) : Decidable (a < b) := by
 
 instance [Compare α] (a b: α) : Decidable (a <= b) := by
   simp
-  apply Order.dec_ne
+  apply dec_or <;> apply Order.dec_eq
 
 instance [Compare α] (a b: α) : Decidable (a > b) := by
   simp
@@ -210,4 +233,4 @@ instance [Compare α] (a b: α) : Decidable (a > b) := by
 
 instance [Compare α] (a b: α) : Decidable (a >= b) := by
   simp
-  apply Order.dec_ne
+  apply dec_or <;> apply Order.dec_eq

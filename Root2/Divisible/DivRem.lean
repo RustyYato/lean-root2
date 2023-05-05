@@ -25,7 +25,7 @@ theorem divrem.divisible_quocient (d: divrem a b) (divis: divisible a b) : a = n
         | nat.zero => contradiction
         | nat.inc _ =>
           rw [nat.mul_zero_r] at h
-          contradiction
+          simp at h
       | nat.inc c₀ => 
         simp
         rw [nat.mul_inc_r, nat.add_comm] at a_eq_bc

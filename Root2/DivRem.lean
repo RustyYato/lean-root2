@@ -22,7 +22,7 @@ def divrem.calc_imp (a b c: nat) (b_gt_0: nat.zero < b) (c_le_a: c <= a) : divre
   match c with
   | nat.inc c₀ => by
     match a with
-    | nat.zero => contradiction
+    | nat.zero => simp at c_le_a
     | nat.inc a₀ =>
     simp
     apply divrem.calc_imp
@@ -39,7 +39,7 @@ def divrem.calc_imp (a b c: nat) (b_gt_0: nat.zero < b) (c_le_a: c <= a) : divre
       | nat.zero => contradiction
       | nat.inc b₀ =>
       match h₁:a with
-      | nat.zero => contradiction
+      | nat.zero => simp at h
       | nat.inc a₀ =>
       rw [←h₀] at b_gt_0
       have prev := divrem.calc_imp a₀ b b₀ b_gt_0 h

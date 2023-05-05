@@ -61,7 +61,7 @@ def nat.has_smaller_factor_dec (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidab
     match q with
     | nat.zero => contradiction
     | nat.inc nat.zero => contradiction
-    | nat.inc (nat.inc _) => contradiction
+    | nat.inc (nat.inc _) => rw [nat.le_inc_irr] at q_le_one; simp at q_le_one
   | nat.inc (nat.inc x₀) =>
     rw [←h₀] at n_gt_one
     match x₀.inc.has_smaller_factor_dec n n_gt_one with

@@ -8,9 +8,7 @@ def nat.checked_sub (a b: nat) : (b <= a) -> nat :=
   match b with
   | nat.zero => fun _ => a
   | nat.inc b₀ => match a with
-    | nat.zero => fun h => by
-      have := nat.zero_lt_inc b₀
-      contradiction
+    | nat.zero => fun h => (nat.le_inc_zero h).elim
     | nat.inc a₀ => fun h => checked_sub a₀ b₀ (inc_le_to_le h)
 
 theorem nat.checked_sub_dec : ∀ a b: nat, nat.zero < b -> (h: b <= a) -> a.checked_sub b h < a := by

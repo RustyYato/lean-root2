@@ -33,7 +33,7 @@ def ord_imp_eq {a b:nat} : ord_imp a b = Order.Eq -> a = b := by
     apply ord_imp_eq ord_ab
 
 @[simp]
-instance : Compare nat where
+instance compare_nat : Compare nat where
   ord := ord_imp
   
   ord_id := ord_imp_id
@@ -170,13 +170,14 @@ theorem nat.ne_and_le_to_lt : ∀ {{a b: nat}}, a ≠ b -> (a <= b) -> a < b := 
       apply nat.ne_and_le_to_lt <;> assumption
 
 theorem nat.comp_dec {{a b: nat}} : a < b -> b <= a -> False := by
-  intro ab _
+  intro ab ba
   have := Compare.ord_flip ab
-  contradiction
+  simp at this
+  cases ba <;> simp at * <;> rw [this] at * <;> contradiction
 
-theorem nat.le_inc_zero : ∀ a: nat, ¬(nat.inc a <= zero) := by
-  intro a b
-  contradiction
+theorem nat.le_inc_zero : ∀ {a: nat}, ¬(nat.inc a <= zero) := by
+  intro a inca_le_zero
+  cases inca_le_zero <;> contradiction
 
 theorem nat.le_le_to_eq : ∀ {{a b: nat}}, a <= b -> b <= a -> a = b := by
   intro a b a_lt_b b_lt_a
@@ -185,12 +186,12 @@ theorem nat.le_le_to_eq : ∀ {{a b: nat}}, a <= b -> b <= a -> a = b := by
     | nat.zero => rfl
     | nat.inc b₀ =>
 
-      have _ := nat.le_inc_zero b b_lt_a
+      have _ := nat.le_inc_zero b_lt_a
       contradiction
   | nat.inc a₀ => match b with
     | nat.zero => 
 
-      have _ := nat.le_inc_zero b a_lt_b
+      have _ := nat.le_inc_zero a_lt_b
       contradiction
     | nat.inc b₀ =>
       rw [←nat.le_inc] at *
@@ -260,9 +261,9 @@ theorem nat.le_trans : ∀ {{a b c: nat}}, a <= b -> b <= c -> a <= c := by
   match a with
   | nat.zero => apply nat.zero_le
   | nat.inc a₀ => match b with
-    | nat.zero => have _ := nat.le_inc_zero _ a_le_b; contradiction
+    | nat.zero => have _ := nat.le_inc_zero a_le_b; contradiction
     | nat.inc b₀ => match c with
-      | nat.zero => have _ := nat.le_inc_zero _ b_le_c; contradiction
+      | nat.zero => have _ := nat.le_inc_zero b_le_c; contradiction
       | nat.inc c₀ =>
       rw [nat.le_inc] at *
       exact nat.le_trans a_le_b b_le_c
@@ -286,7 +287,7 @@ theorem nat.lt_le_trans : ∀ {{a b c: nat}}, a < b -> b <= c -> a < c := by
   match c with
   | nat.zero => match b with
      | nat.zero => assumption
-     | nat.inc _ => contradiction
+     | nat.inc _ => have := nat.le_inc_zero b_lt_c; contradiction
   | nat.inc c₀ => match b with
     | nat.zero => match a with
       | nat.inc _ => contradiction
@@ -301,8 +302,7 @@ def nat.compare_le (a b: nat) : Decidable (a <= b) :=
   | nat.zero => Decidable.isTrue (by cases b <;> simp)
   | nat.inc a₀ => match b with
     | nat.zero => Decidable.isFalse (by
-      intro
-      contradiction
+      exact nat.le_inc_zero
     )
     | nat.inc b₀ =>
       by rw [@nat.le_inc a₀ b₀]; exact (nat.compare_le a₀ b₀)
@@ -331,7 +331,7 @@ def nat.compare_eq (a b: nat) : Decidable (a = b) :=
 
 theorem nat.inc_le (a b: nat) : inc a <= b -> a <= b := by
   match b with
-  | nat.zero => intro a; contradiction
+  | nat.zero => intro a; have := nat.le_inc_zero a; contradiction
   | nat.inc b₀ =>
     intro a_le_b
     have b_le_inc_b := nat.a_le_inc_a b₀
