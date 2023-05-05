@@ -1,52 +1,68 @@
 import  Root2.Nat
+import Root2.Cmp
 import Init.Data.Array.DecidableEq
 
 @[simp]
-def nat.less (a b: nat) : Prop :=
-  match a with
-    | nat.zero => match b with
-      | nat.zero => False
-      | nat.inc _ => True
-    | nat.inc a₀ => match b with
-      | nat.zero => False
-      | nat.inc b₀ => less a₀ b₀
+def ord_imp (a b: nat) := match a, b with
+  | .zero, .zero => Order.Eq
+  | .zero, .inc _ => Order.Less
+  | .inc _, .zero => Order.Greater
+  | .inc a₀, .inc b₀ => ord_imp a₀ b₀
+
+def ord_imp_id {a:nat} : ord_imp a a = Order.Eq := by
+    match a with
+    | nat.zero => rfl
+    | nat.inc a₀ =>
+      simp
+      exact ord_imp_id
+
+def ord_imp_flip {a b:nat} : ord_imp a b = (ord_imp b a).flip := by
+    cases a <;> cases b <;> simp
+    apply ord_imp_flip
+
+def ord_imp_trans {a b c:nat} {o: Order} : ord_imp a b = o -> ord_imp b c = o -> ord_imp a c = o := by
+    intro ord_ab ord_bc
+    cases a <;> cases b <;> cases c <;> cases o <;> simp <;> simp at *
+    apply ord_imp_trans ord_ab ord_bc
+    apply ord_imp_trans ord_ab ord_bc
+    apply ord_imp_trans ord_ab ord_bc
+
+def ord_imp_eq {a b:nat} : ord_imp a b = Order.Eq -> a = b := by
+    intro ord_ab
+    cases a <;> cases b <;> simp <;> simp at *
+    apply ord_imp_eq ord_ab
 
 @[simp]
-def nat.less_eq (a b: nat) : Prop :=
-  match a with
-    | nat.zero => True
-    | nat.inc a₀ => match b with
-      | nat.zero => False
-      | nat.inc b₀ => less_eq a₀ b₀
-
-instance : LT nat where
-  lt := nat.less
-
-instance : LE nat where
-  le := nat.less_eq
-
-syntax "unfold_le" : tactic
-
-macro_rules
- | `(tactic| unfold_le) => `(tactic| unfold LE.le; unfold instLENat_1 )
-
-syntax "unfold_lt" : tactic
-
-macro_rules
- | `(tactic| unfold_lt) => `(tactic| unfold LT.lt; unfold instLTNat_1 )
+instance : Compare nat where
+  ord := ord_imp
+  
+  ord_id := ord_imp_id
+  ord_flip := by
+    intro a b o
+    rw [@ord_imp_flip a b]
+    cases o <;> (simp; split)
+    any_goals (intro; contradiction)
+    any_goals (intro; assumption)
+  ord_transitive := by apply ord_imp_trans
+  ord_implies_eq := by apply ord_imp_eq
 
 theorem nat.zero_lt_inc : ∀ a: nat, nat.zero < nat.inc a := by
   intro
   trivial
+
+theorem nat.zero_le_inc : ∀ a: nat, nat.zero <= nat.inc a := by
+  intro
+  unfold ord_le
+  simp
 
 theorem nat.inc_le_to_le : (nat.inc a) <= (nat.inc b) -> a <= b := by
   intro
   trivial
 
 theorem nat.le_to_inc_le : a <= b -> (nat.inc a) <= (nat.inc b) := by
-  unfold_le
-  intro le_inc
-  trivial
+  unfold ord_le
+  simp
+  exact id
 
 theorem nat.lt_inc : ((nat.inc a) < (nat.inc b)) = (a < b) := by
   trivial
@@ -54,34 +70,27 @@ theorem nat.lt_inc : ((nat.inc a) < (nat.inc b)) = (a < b) := by
 theorem nat.le_inc : ((nat.inc a) <= (nat.inc b)) = (a <= b) := by
   trivial
 
-theorem nat.not_lt_is_sym_le_imp : (¬nat.less a b) = nat.less_eq b a := by
-  unfold less
-  unfold less_eq
-  match a with
-  | nat.zero => match b with
-    | nat.zero => trivial
-    | nat.inc _ => simp
-  | nat.inc a₀ => match b with
-    | nat.zero => simp
-    | nat.inc b₀ => simp; exact @nat.not_lt_is_sym_le_imp a₀ b₀
-
-theorem nat.not_le_is_sym_lt_imp : (¬nat.less_eq a b) = nat.less b a := by
-  unfold less
-  unfold less_eq
-  match a with
-  | nat.zero => match b with
-    | nat.zero => trivial
-    | nat.inc _ => simp
-  | nat.inc a₀ => match b with
-    | nat.zero => simp
-    | nat.inc b₀ => simp; exact @nat.not_le_is_sym_lt_imp a₀ b₀
-
 theorem nat.not_lt_is_sym_le {{ a b: nat }} : (¬(a < b)) = (b <= a) := by
-  
-  apply nat.not_lt_is_sym_le_imp
+  unfold ord_lt ord_le
+  simp
+  match a with
+  | nat.zero => match b with
+    | nat.zero => simp
+    | nat.inc _ => simp
+  | nat.inc a₀ => match b with
+    | nat.zero => simp
+    | nat.inc b₀ => simp; exact @nat.not_lt_is_sym_le a₀ b₀
 
 theorem nat.not_le_is_sym_lt {{ a b: nat }} : (¬(a <= b)) = (b < a) := by
-  apply nat.not_le_is_sym_lt_imp
+  unfold ord_lt ord_le
+  simp
+  match a with
+  | nat.zero => match b with
+    | nat.zero => simp
+    | nat.inc _ => simp
+  | nat.inc a₀ => match b with
+    | nat.zero => simp
+    | nat.inc b₀ => simp; exact @nat.not_le_is_sym_lt a₀ b₀
 
 theorem nat.eq_inc_irr : nat.inc a = nat.inc b <-> a = b := by
   apply Iff.intro
@@ -96,6 +105,20 @@ theorem nat.le_inc_irr (a b: nat) : (inc a <= inc b) = (a <= b) := by
 
 theorem nat.ne_inc_irr (a b: nat) : (inc a ≠ inc b) = (a ≠ b) := by
   simp
+
+theorem nat.le_id : ∀ a: nat, a <= a := by
+  intro a
+  match a with
+  | nat.zero =>
+    unfold ord_le
+    simp
+  | nat.inc a₀ => rw [←nat.le_inc]; exact (nat.le_id a₀)
+
+theorem nat.zero_le : ∀ a: nat, nat.zero <= a := by
+  intro a
+  cases a
+  apply nat.le_id
+  apply nat.zero_le_inc
 
 theorem nat.lt_to_ne : ∀{{a b: nat}}, (a < b) -> ¬(a = b) := by
   intro a b lt
@@ -117,7 +140,9 @@ theorem nat.lt_is_le : ∀ a b: nat, (a < b) -> (a <= b) := by
   match a with
   | nat.zero =>
     intro
-    trivial
+    simp
+    apply nat.zero_le
+    
   | nat.inc a₀ => match b with
     | nat.zero =>
       intro
@@ -128,16 +153,6 @@ theorem nat.lt_is_le : ∀ a b: nat, (a < b) -> (a <= b) := by
       rw  [le_inc_irr]
       apply nat.lt_is_le
       assumption
-
-theorem nat.zero_le : ∀ a: nat, nat.zero <= a := by
-  intro
-  trivial
-
-theorem nat.le_id : ∀ a: nat, a <= a := by
-  intro a
-  match a with
-  | nat.zero => trivial
-  | nat.inc a₀ => rw [←nat.le_inc]; exact (nat.le_id a₀)
 
 theorem nat.eq_to_le : ∀ {{a b: nat}}, a = b -> (a <= b) := by
   intro a b a_eq_b
@@ -155,8 +170,8 @@ theorem nat.ne_and_le_to_lt : ∀ {{a b: nat}}, a ≠ b -> (a <= b) -> a < b := 
       apply nat.ne_and_le_to_lt <;> assumption
 
 theorem nat.comp_dec {{a b: nat}} : a < b -> b <= a -> False := by
-  intro a_lt_b b_le_a
-  rw [←nat.not_lt_is_sym_le] at b_le_a
+  intro ab _
+  have := Compare.ord_flip ab
   contradiction
 
 theorem nat.le_inc_zero : ∀ a: nat, ¬(nat.inc a <= zero) := by
@@ -201,7 +216,7 @@ theorem nat.a_lt_inc_a : ∀ a: nat, a < nat.inc a := by
 theorem nat.a_le_inc_a : ∀ a: nat, a <= nat.inc a := by
   intro a
   match a with
-  | nat.zero => trivial
+  | nat.zero => apply nat.zero_le_inc
   | nat.inc a₀ => rw [nat.le_inc]; apply nat.a_le_inc_a
 
 theorem nat.no_between_inc : ∀ {{a b: nat}}, a < b -> b < nat.inc a -> False := by
@@ -283,7 +298,7 @@ theorem nat.lt_le_trans : ∀ {{a b c: nat}}, a < b -> b <= c -> a < c := by
 
 def nat.compare_le (a b: nat) : Decidable (a <= b) :=
   match a with
-  | nat.zero => Decidable.isTrue (by trivial)
+  | nat.zero => Decidable.isTrue (by cases b <;> simp)
   | nat.inc a₀ => match b with
     | nat.zero => Decidable.isFalse (by
       intro
@@ -323,10 +338,10 @@ theorem nat.inc_le (a b: nat) : inc a <= b -> a <= b := by
     exact (nat.le_trans a_le_b b_le_inc_b)
 
 theorem nat.inc_gt_zero {{ a : nat }} : (a.inc <= nat.zero)=False := by
-  trivial
+  simp
 
 theorem nat.zero_lt_all {{ a : nat }} : (a < nat.zero)=False := by
-  cases a <;> trivial
+  cases a <;> simp
 
 theorem nat.not_lt_id {{ a : nat }} : ¬(a < a) := by
   match a with
@@ -335,7 +350,7 @@ theorem nat.not_lt_id {{ a : nat }} : ¬(a < a) := by
 
 theorem nat.lt_inc_to_le {{ a b: nat }} : (a < inc b) = (a <= b) := by
   match a with
-  | nat.zero => trivial
+  | nat.zero => cases b <;> simp
   | nat.inc a₀ => match b with
     | nat.zero =>
       rw [nat.lt_inc_irr, @nat.inc_gt_zero a₀, nat.zero_lt_all]
@@ -350,7 +365,6 @@ theorem nat.size_of_lt {{ a b : nat }} :  a < b -> sizeOf a < sizeOf b := by
     split <;> (intro; contradiction)
   | nat.zero, nat.inc b₀ => 
     simp
-    intro
     apply Nat.zero_lt_succ
   | nat.inc a₀, nat.zero =>
     intro

@@ -85,19 +85,14 @@ theorem nat.mul_output_lt {{a b c: nat}} (a_gt_one: nat.zero.inc < a) (b_gt_one:
   | nat.zero => contradiction
   | nat.inc nat.zero => contradiction
   | nat.inc (nat.inc b₀) =>
-    simp
     intro inc_add_eq_c
     rw [inc_add_eq_c]
     rw [
       nat.mul_inc_r,
-      nat.add_inc,
-      nat.add_inc,
+      nat.add_inc_r,
+      nat.add_inc_r,
       nat.lt_inc_irr,
       nat.lt_inc_irr,
-      nat.add_perm9 b₀,
-      ←nat.add_perm0,
-      ←nat.add_inc,
-      ←nat.add_inc,
       nat.lt_add_const_irr
     ]
     apply nat.zero_lt_inc

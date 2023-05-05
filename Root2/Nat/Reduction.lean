@@ -23,9 +23,7 @@ theorem nat.bump_le : a <= n -> a ≠ n -> inc a <= n := by
     rw [nat.le_inc_irr]
     match n₀ with
     | .zero => apply nat.le_id
-    | .inc n₁ => 
-      apply nat.zero_lt_inc
-      assumption
+    | .inc n₁ => apply nat.zero_le_inc
   | .inc a₀, .inc n₀ =>
     rw [nat.le_inc_irr]
     rw [nat.ne_inc_irr] at inca_ne_n
