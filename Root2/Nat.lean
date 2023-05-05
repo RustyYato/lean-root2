@@ -3,6 +3,7 @@ import Lean
 inductive nat where
   | zero : nat
   | inc : nat -> nat
+  deriving BEq
 
 instance : OfNat nat Nat.zero where
     ofNat : nat := nat.zero

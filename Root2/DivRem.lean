@@ -34,7 +34,7 @@ def divrem.calc_imp (a b c: nat) (b_gt_0: nat.zero < b) (c_le_a: c <= a) : divre
       exact (divrem.remain h)
     | Decidable.isFalse h => 
     by
-      rw [nat.not_lt_is_sym_le_op] at h
+      rw [nat.not_lt_is_sym_le] at h
       match h₀:b with
       | nat.zero => contradiction
       | nat.inc b₀ =>

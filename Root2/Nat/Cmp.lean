@@ -54,7 +54,7 @@ theorem nat.lt_inc : ((nat.inc a) < (nat.inc b)) = (a < b) := by
 theorem nat.le_inc : ((nat.inc a) <= (nat.inc b)) = (a <= b) := by
   trivial
 
-theorem nat.not_lt_is_sym_le : (¬nat.less a b) = nat.less_eq b a := by
+theorem nat.not_lt_is_sym_le_imp : (¬nat.less a b) = nat.less_eq b a := by
   unfold less
   unfold less_eq
   match a with
@@ -63,9 +63,9 @@ theorem nat.not_lt_is_sym_le : (¬nat.less a b) = nat.less_eq b a := by
     | nat.inc _ => simp
   | nat.inc a₀ => match b with
     | nat.zero => simp
-    | nat.inc b₀ => simp; exact @nat.not_lt_is_sym_le a₀ b₀
+    | nat.inc b₀ => simp; exact @nat.not_lt_is_sym_le_imp a₀ b₀
 
-theorem nat.not_le_is_sym_lt : (¬nat.less_eq a b) = nat.less b a := by
+theorem nat.not_le_is_sym_lt_imp : (¬nat.less_eq a b) = nat.less b a := by
   unfold less
   unfold less_eq
   match a with
@@ -74,13 +74,14 @@ theorem nat.not_le_is_sym_lt : (¬nat.less_eq a b) = nat.less b a := by
     | nat.inc _ => simp
   | nat.inc a₀ => match b with
     | nat.zero => simp
-    | nat.inc b₀ => simp; exact @nat.not_le_is_sym_lt a₀ b₀
+    | nat.inc b₀ => simp; exact @nat.not_le_is_sym_lt_imp a₀ b₀
 
-theorem nat.not_lt_is_sym_le_op {{ a b: nat }} : (¬(a < b)) = (b <= a) := by
-  apply nat.not_lt_is_sym_le
+theorem nat.not_lt_is_sym_le {{ a b: nat }} : (¬(a < b)) = (b <= a) := by
+  
+  apply nat.not_lt_is_sym_le_imp
 
-theorem nat.not_le_is_sym_lt_op {{ a b: nat }} : (¬(a <= b)) = (b < a) := by
-  apply nat.not_le_is_sym_lt
+theorem nat.not_le_is_sym_lt {{ a b: nat }} : (¬(a <= b)) = (b < a) := by
+  apply nat.not_le_is_sym_lt_imp
 
 theorem nat.eq_inc_irr : nat.inc a = nat.inc b <-> a = b := by
   apply Iff.intro
@@ -155,7 +156,7 @@ theorem nat.ne_and_le_to_lt : ∀ {{a b: nat}}, a ≠ b -> (a <= b) -> a < b := 
 
 theorem nat.comp_dec {{a b: nat}} : a < b -> b <= a -> False := by
   intro a_lt_b b_le_a
-  rw [←nat.not_lt_is_sym_le_op] at b_le_a
+  rw [←nat.not_lt_is_sym_le] at b_le_a
   contradiction
 
 theorem nat.le_inc_zero : ∀ a: nat, ¬(nat.inc a <= zero) := by
@@ -361,3 +362,77 @@ theorem nat.size_of_lt {{ a b : nat }} :  a < b -> sizeOf a < sizeOf b := by
     apply Nat.succ_lt_succ
     apply nat.size_of_lt
     assumption
+
+theorem beq_true_implies_eq {{a b: nat}} : (a == b) -> (a = b) := by
+  intro a_eq_b
+  match a, b with
+  | nat.zero, nat.zero => simp
+  | nat.inc _, nat.zero => contradiction
+  | nat.zero, nat.inc _ => contradiction
+  | nat.inc a₀, nat.inc b₀ =>
+      rw [nat.eq_inc_irr]
+      apply beq_true_implies_eq
+      exact a_eq_b
+
+theorem beq_id (a: nat) : a == a := by 
+  match a with
+  | nat.zero => rfl
+  | nat.inc a₀ => apply beq_id a₀
+
+theorem eq_implies_beq_true {{a b: nat}} : (a = b) -> (a == b) := by
+  intro a_eq_b
+  rw [←a_eq_b]
+  apply beq_id
+
+theorem beq_is_eq {{a b: nat}} : (a == b) = (a = b) := by
+  have biject : a == b ↔ a =b := Iff.intro (by apply beq_true_implies_eq) (by apply eq_implies_beq_true)
+  rw [biject]
+
+theorem beq_false_implies_ne {{a b: nat}} : ((a == b) = false) -> (a ≠ b) := by
+  intro a_ne_b
+  match a, b with
+  | nat.zero, nat.zero => contradiction
+  | nat.inc _, nat.zero => intro; contradiction
+  | nat.zero, nat.inc _ => intro; contradiction
+  | nat.inc a₀, nat.inc b₀ =>
+      rw [nat.ne_inc_irr]
+      apply beq_false_implies_ne
+      exact a_ne_b
+
+theorem ne_implies_beq_false {{a b: nat}} : (a ≠ b) -> ((a == b) = false) := by
+  intro a_ne_b
+  match a, b with
+  | nat.zero, nat.zero => contradiction
+  | nat.inc _, nat.zero => rfl
+  | nat.zero, nat.inc _ => rfl
+  | nat.inc a₀, nat.inc b₀ =>
+      rw [nat.ne_inc_irr] at a_ne_b
+      have := ne_implies_beq_false a_ne_b
+      assumption
+
+theorem beq_is_ne {{a b: nat}} : ((a == b) = false) = (a ≠ b) := by
+  have biject : (a == b) = false ↔ a ≠ b := Iff.intro (by apply beq_false_implies_ne) (by apply ne_implies_beq_false)
+  rw [biject]
+
+
+theorem beq_symm {{a b: nat}} {{c: Bool}} : ((a == b) = c) = ((b == a) = c) := by
+  match c with
+  | true => 
+  rw [beq_is_eq, beq_is_eq]
+  have := Iff.intro (@Eq.symm _ a b) (@Eq.symm _ b a)
+  rw [this]
+  | false =>
+    rw [beq_is_ne, beq_is_ne]
+    have := Iff.intro (@Ne.symm _ a b) (@Ne.symm _ b a)
+    rw [this]
+
+
+theorem nat.not_le_implies_le_symm {{a b: nat}} : ¬ a <= b -> b <= a := by
+  intro not_a_le_b
+  rw [nat.not_le_is_sym_lt] at not_a_le_b
+  exact nat.lt_is_le _ _ not_a_le_b
+
+
+instance {{a b: nat}} : Decidable (a = b) := nat.compare_eq a b
+instance {{a b: nat}} : Decidable (a < b) := nat.compare_lt a b
+instance {{a b: nat}} : Decidable (a <= b) := nat.compare_le a b

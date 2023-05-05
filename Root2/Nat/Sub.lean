@@ -36,7 +36,7 @@ theorem nat.checked_sub_less_eq : ∀ {{a b: nat}}, (h: b <= a) -> a.checked_sub
   intro a b b_le_a
   match a with
     | nat.zero => match b with
-      | nat.zero => simp; apply nat.le_id
+      | nat.zero => simp
     | nat.inc a₀ => match b with
       | nat.zero => simp; apply nat.le_id
       | nat.inc b₀ =>
