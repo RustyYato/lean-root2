@@ -59,8 +59,8 @@ theorem list_concat_sorted_snd (_: a <= b) : List.concat_sorted (a::as) (b::bs) 
   rfl
   contradiction
 
-theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted: b.sorted) : 
-  (a.concat_sorted b).sorted := by
+theorem concat_sorted_keeps_sorted (a b: List nat) (a_sorted: a.sorted) (b_sorted: b.sorted) : (a.concat_sorted b).sorted := 
+by
   unfold List.concat_sorted
   match a, b with
   | [], _ =>
@@ -92,7 +92,7 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
     apply And.intro
     exact b_sorted.left
     rw [←list_concat_sorted_snd]
-    apply concat_sorted_is_correct
+    apply concat_sorted_keeps_sorted
     repeat assumption
     exact b_sorted.right
     assumption
@@ -119,7 +119,7 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
     any_goals exact a_sorted.left
     any_goals exact a_sorted.right
     rw [←list_concat_sorted_fst]
-    apply concat_sorted_is_correct
+    apply concat_sorted_keeps_sorted
     repeat any_goals apply And.intro
     repeat any_goals (apply nat.not_le_implies_le_symm; assumption)
     repeat any_goals (rw [←nat.not_le_is_sym_lt]; assumption)
@@ -134,7 +134,7 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
       repeat assumption
       exact b_sorted.left
       rw [←list_concat_sorted_snd]
-      apply concat_sorted_is_correct
+      apply concat_sorted_keeps_sorted
       repeat assumption
       exact b_sorted.right
       repeat assumption
@@ -148,7 +148,7 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
         apply nat.not_le_implies_le_symm
         assumption
         rw [←list_concat_sorted_snd]
-        apply concat_sorted_is_correct
+        apply concat_sorted_keeps_sorted
         exact a_sorted.right
         exact b_sorted.right
         repeat assumption
@@ -157,7 +157,7 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
         apply And.intro
         exact a_sorted.left
         rw [←list_concat_sorted_fst]
-        apply concat_sorted_is_correct
+        apply concat_sorted_keeps_sorted
         exact a_sorted.right
         exact b_sorted.right
         rw [←nat.not_le_is_sym_lt]
@@ -173,7 +173,7 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
       apply And.intro
       exact b_sorted.left
       rw [←list_concat_sorted_snd]
-      apply concat_sorted_is_correct
+      apply concat_sorted_keeps_sorted
       exact a_sorted.right
       exact b_sorted.right
       assumption
@@ -181,7 +181,7 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
       apply And.intro
       assumption
       rw [←list_concat_sorted_fst]
-      apply concat_sorted_is_correct
+      apply concat_sorted_keeps_sorted
       exact a_sorted.right
       exact b_sorted.right
       rw [←nat.not_le_is_sym_lt]
@@ -191,13 +191,13 @@ theorem concat_sorted_is_correct (a b: List nat) (a_sorted: a.sorted) (b_sorted:
       apply And.intro
       exact a_sorted.left
       rw [←list_concat_sorted_fst]
-      apply concat_sorted_is_correct
+      apply concat_sorted_keeps_sorted
       exact a_sorted.right
       assumption
       rw [←nat.not_le_is_sym_lt]
       assumption
     }
-  termination_by concat_sorted_is_correct => a.length + b.length
+  termination_by concat_sorted_keeps_sorted => a.length + b.length
   decreasing_by {
     simp_wf
     try { exact Nat.add_lt_add_left (Nat.lt_succ_self _) (Nat.succ 0) }
