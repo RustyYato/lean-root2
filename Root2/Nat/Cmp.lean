@@ -16,9 +16,8 @@ def ord_imp_id {a:nat} : ord_imp a a = Order.Eq := by
       simp
       exact ord_imp_id
 
-def ord_imp_flip {a b:nat} : ord_imp a b = (ord_imp b a).flip := by
-    cases a <;> cases b <;> simp
-    apply ord_imp_flip
+def ord_imp_flip {a b:nat} {o: Order} : (ord_imp a b = o) = (ord_imp b a = o.flip) := by
+    cases a <;> cases b <;> simp <;> split <;> simp <;> apply ord_imp_flip
 
 def ord_imp_trans {a b c:nat} {o: Order} : ord_imp a b = o -> ord_imp b c = o -> ord_imp a c = o := by
     intro ord_ab ord_bc
@@ -37,12 +36,7 @@ instance compare_nat : Compare nat where
   ord := ord_imp
   
   ord_id := ord_imp_id
-  ord_flip := by
-    intro a b o
-    rw [@ord_imp_flip a b]
-    cases o <;> (simp; split)
-    any_goals (intro; contradiction)
-    any_goals (intro; assumption)
+  ord_flip := ord_imp_flip
   ord_transitive := by apply ord_imp_trans
   ord_implies_eq := by apply ord_imp_eq
 
@@ -169,12 +163,16 @@ theorem nat.ne_and_le_to_lt : ∀ {{a b: nat}}, a ≠ b -> (a <= b) -> a < b := 
       rw [nat.lt_inc_irr]
       apply nat.ne_and_le_to_lt <;> assumption
 
-theorem nat.comp_dec {{a b: nat}} : a < b -> b <= a -> False := by
+theorem nat.comp_dec {{a b: nat}} : a < b -> ¬(b <= a) := by
+  unfold ord_lt ord_le
+  simp
   intro ab ba
-  have := Compare.ord_flip ab
-  simp at this
-  cases ba <;> simp at * <;> rw [this] at * <;> contradiction
+  rw [ord_imp_flip] at ab
+  simp at ab
+  rw [ab] at ba
+  cases ba <;> contradiction
 
+@[simp]
 theorem nat.le_inc_zero : ∀ {a: nat}, ¬(nat.inc a <= zero) := by
   intro a inca_le_zero
   cases inca_le_zero <;> contradiction
@@ -299,7 +297,7 @@ theorem nat.lt_le_trans : ∀ {{a b c: nat}}, a < b -> b <= c -> a < c := by
 
 def nat.compare_le (a b: nat) : Decidable (a <= b) :=
   match a with
-  | nat.zero => Decidable.isTrue (by cases b <;> simp)
+  | nat.zero => Decidable.isTrue (by unfold ord_le; cases b <;> simp)
   | nat.inc a₀ => match b with
     | nat.zero => Decidable.isFalse (by
       exact nat.le_inc_zero
@@ -341,7 +339,7 @@ theorem nat.inc_gt_zero {{ a : nat }} : (a.inc <= nat.zero)=False := by
   simp
 
 theorem nat.zero_lt_all {{ a : nat }} : (a < nat.zero)=False := by
-  cases a <;> simp
+  unfold ord_lt; cases a <;> simp
 
 theorem nat.not_lt_id {{ a : nat }} : ¬(a < a) := by
   match a with
@@ -350,7 +348,7 @@ theorem nat.not_lt_id {{ a : nat }} : ¬(a < a) := by
 
 theorem nat.lt_inc_to_le {{ a b: nat }} : (a < inc b) = (a <= b) := by
   match a with
-  | nat.zero => cases b <;> simp
+  | nat.zero => unfold ord_lt ord_le; cases b <;> simp
   | nat.inc a₀ => match b with
     | nat.zero =>
       rw [nat.lt_inc_irr, @nat.inc_gt_zero a₀, nat.zero_lt_all]
@@ -360,6 +358,7 @@ theorem nat.lt_inc_to_le {{ a b: nat }} : (a < inc b) = (a <= b) := by
 
 theorem nat.size_of_lt {{ a b : nat }} :  a < b -> sizeOf a < sizeOf b := by
   unfold sizeOf instSizeOfNat_1 toNat
+  unfold ord_lt
   match a, b with
   | nat.zero, nat.zero =>
     split <;> (intro; contradiction)
