@@ -40,6 +40,28 @@ instance compare_nat : Compare nat where
   ord_transitive := by apply ord_imp_trans
   ord_implies_eq := by apply ord_imp_eq
 
+def nat.ord_imp_le_trans {a b c:nat} :
+  (ord_imp a b = Order.Less ∨ ord_imp a b = Order.Eq) -> (ord_imp b c = Order.Less ∨ ord_imp b c = Order.Eq) -> ord_imp a c = Order.Less ∨ ord_imp a c = Order.Eq := by
+    intro ord_ab ord_bc
+    cases ord_ab <;> cases ord_bc <;> simp <;> simp at *
+    apply Or.inl; apply @ord_imp_trans a b c; assumption; assumption
+    any_goals (apply Or.inr; apply @ord_imp_trans a b c; assumption; assumption)
+
+    have b_eq_c : b = c := by 
+      apply Compare.ord_implies_eq
+      assumption
+    rw [←b_eq_c]
+    apply Or.inl
+    assumption
+
+    have a_eq_b : a = b := by 
+      apply Compare.ord_implies_eq
+      assumption
+    rw [a_eq_b]
+    apply Or.inl
+    assumption
+
+
 theorem nat.zero_lt_inc : ∀ a: nat, nat.zero < nat.inc a := by
   intro
   trivial
