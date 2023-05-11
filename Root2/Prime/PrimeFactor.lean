@@ -296,12 +296,51 @@ theorem mul_list_products (a_no_zeros: a.allP not_zero) (b_no_zeros: b.allP not_
   | a₀ :: as =>
     simp
     have ⟨ a₀_ne_zero, a_no_zeros ⟩ := a_no_zeros
-    have x := nat.zero
-    have y := nat.zero
     rw [←nat.mul_perm0, nat.mul_irr a₀_ne_zero]
     apply mul_list_products
     assumption
     assumption
+
+theorem combine_list_product {{ a:nat }} {{ as: List nat }} : nat.mul a (list_product as) = (list_product (a::as)) := by
+  rfl
+
+theorem mul_sorted_list_products (a_no_zeros: alist.allP not_zero) (b_no_zeros: blist.allP not_zero)
+  : nat.mul (list_product alist) (list_product blist) = list_product (alist.concat_sorted blist) := by 
+  match alist, blist with
+  | [], _ => simp; rw [nat.add_zero_r]
+  | _, [] =>
+    rw [concat_sorted_empty_right]
+    simp
+    rw [nat.mul_one_r]
+  | a::as, b::bs =>
+    simp
+    cases h:ord_imp a b <;> simp
+    {
+      rw [nat.mul_comm, ←nat.mul_perm0, nat.mul_irr]
+      rw [combine_list_product, nat.mul_comm]
+      apply mul_sorted_list_products
+      assumption
+      exact b_no_zeros.right
+      exact b_no_zeros.left
+    }
+    {
+      rw [nat.mul_perm1, nat.mul_comm, ←nat.mul_perm0 a (list_product _)]
+      rw [nat.mul_perm7, nat.mul_irr, nat.mul_irr]
+      apply mul_sorted_list_products
+      exact a_no_zeros.right
+      exact b_no_zeros.right
+      exact b_no_zeros.left
+      exact a_no_zeros.left
+    }
+    {
+      rw [←nat.mul_perm0, nat.mul_irr]
+      rw [combine_list_product]
+      apply mul_sorted_list_products
+      exact a_no_zeros.right
+      assumption
+      exact a_no_zeros.left
+    }
+  termination_by mul_sorted_list_products => (alist, blist)
 
 theorem all_implies {{ α: Type _ }} {{ A B: α -> Prop }} :
   (list: List α) ->
@@ -316,6 +355,40 @@ theorem all_implies {{ α: Type _ }} {{ A B: α -> Prop }} :
   apply And.intro
   exact (A_to_B _ Ax)
   exact all_implies xs Axs A_to_B
+
+theorem concat_sorted_preserves_all {{ α: Type _ }} [Compare α] {{ P: α -> Prop }} {{alist blist: List α}} :
+  (List.allP alist P) -> (List.allP blist P) -> (List.allP (alist.concat_sorted blist) P) := by
+  intro all_a all_b
+  
+  match alist, blist with
+  | [], _ => simp; assumption
+  | _, [] =>
+    rw [list_concat_sorted_empty]
+    assumption
+  | a :: as, b :: bs =>
+    simp
+    cases h:Compare.ord a b <;> simp
+    repeat any_goals apply And.intro
+    exact all_b.left
+    {
+      apply concat_sorted_preserves_all
+      assumption
+      exact all_b.right  
+    }
+    exact all_a.left
+    exact all_b.left
+    {
+      apply concat_sorted_preserves_all
+      exact all_a.right
+      exact all_b.right
+    }
+    exact all_a.left
+    {
+      apply concat_sorted_preserves_all
+      exact all_a.right
+      exact all_b
+    }
+  termination_by concat_sorted_preserves_all => (alist, blist)
 
 theorem concat_preserves_all {{ α: Type _ }} {{ P: α -> Prop }} {{a b: List α}} :
   (List.allP a P) -> (List.allP b P) -> (List.allP (a ++ b) P) := by
@@ -377,15 +450,13 @@ def PrimeFactorization.merge {{a b: nat}}
   PrimeFactorization (nat.mul a b) := by
   match pa, pb with
   | .PrimeFactors a_products a_primes a_sorted a_product, .PrimeFactors b_products b_primes b_sorted b_product =>
-    apply PrimeFactorization.PrimeFactors (a_products ++ b_products)
-    apply concat_preserves_all <;> assumption
-    {
+    apply PrimeFactorization.PrimeFactors (a_products.concat_sorted b_products)
 
-      admit
-    }
+    apply concat_sorted_preserves_all <;> assumption
+    apply concat_sorted_keeps_sorted <;> assumption
     {
       rw [a_product, b_product]
-      apply mul_list_products
+      apply mul_sorted_list_products
       exact all_implies a_products a_primes prime_gt_zero
       exact all_implies b_products b_primes prime_gt_zero
     }
