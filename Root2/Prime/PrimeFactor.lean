@@ -41,6 +41,9 @@ def List.concat_sorted [Compare α] (a b: List α) : List α := match a with
 | .Greater => a₀::(List.concat_sorted as (b₀::bs))
 termination_by List.concat_sorted a b => (a, b)
 
+theorem list_concat_sorted_empty [Compare α] {{as: List α}} : List.concat_sorted as [] = as := by
+  cases as <;> simp
+
 theorem pop_sorted [Compare α] {{a: α}} {{as: List α}} : (a::as).sorted -> as.sorted := by
   intro list_sorted
   match as with
@@ -50,23 +53,114 @@ theorem pop_sorted [Compare α] {{a: α}} {{as: List α}} : (a::as).sorted -> as
 theorem singleton_list_is_sorted [Compare α] {a: α} : [a].sorted := by simp
 
 theorem list_concat_sorted_fst [Compare α] {{ a b : α }} (b_lt_a: b < a) : a :: (List.concat_sorted as (b::bs)) = List.concat_sorted (a::as) (b::bs) := by
-  unfold ord_lt at b_lt_a
-  simp at b_lt_a
-  rw [Compare.ord_flip] at b_lt_a
   simp
-  split
-  rw [b_lt_a] at *; contradiction
-  rw [b_lt_a] at *; contradiction
-  rfl
+  rw [Compare.flip]
+  rw [b_lt_a]
+  simp
 
 theorem list_concat_sorted_snd [Compare α] {{ a b : α }} (a_lt_b: a < b) : b :: (List.concat_sorted (a::as) bs) = List.concat_sorted (a::as) (b::bs)  := by
-  unfold ord_lt at a_lt_b
-  simp at a_lt_b
   simp
-  split
-  rw [a_lt_b] at *; contradiction
-  rfl
-  rw [a_lt_b] at *; contradiction
+  rw [a_lt_b]
+
+theorem list_sorted_snd_fst_empty [Compare α] {{ b : α }} (bbs_sorted : (b :: bs).sorted) :
+  List.sorted (b :: List.concat_sorted [] bs) := by
+  simp
+  assumption
+
+theorem list_sorted_fst_snd_empty [Compare α] {{ a : α }} (aas_sorted : (a :: as).sorted) :
+  List.sorted (a :: List.concat_sorted as []) := by
+  rw [list_concat_sorted_empty]
+  assumption
+
+mutual
+  theorem list_sorted_fst_snd_nonempty [Compare α] {{ a b : α }} {{ as : List α }} (b_le_a: b <= a) (aas_sorted : (a :: as).sorted) (bbs_sorted : (b :: bs).sorted) :
+    List.sorted (a :: List.concat_sorted as (b :: bs)) := by
+    match as with
+    | [] => 
+      simp
+      apply And.intro
+      assumption
+      assumption
+    | a' :: as' =>
+    simp
+    cases h:Compare.ord a' b <;> simp 
+    repeat any_goals apply And.intro
+    assumption
+    apply list_sorted_snd_fst_nonempty
+    apply Or.inl
+    assumption
+    exact aas_sorted.right
+    assumption
+    exact aas_sorted.left
+    apply Or.inr
+    apply Compare.ord_symm
+    assumption
+    have a'_eq_b : a' = b := Compare.ord_implies_eq h
+    match bs with
+    | [] =>
+      apply list_sorted_fst_snd_empty
+      rw [←a'_eq_b]
+      exact aas_sorted.right
+    | b'::bs' =>
+      rw [←a'_eq_b]
+      apply list_sorted_fst_snd_nonempty
+      rw [a'_eq_b]
+      exact bbs_sorted.left
+      exact aas_sorted.right
+      exact bbs_sorted.right
+    exact aas_sorted.left
+    apply list_sorted_fst_snd_nonempty
+    apply Or.inl
+    rw [Compare.ord_flip]
+    assumption
+    exact aas_sorted.right
+    exact bbs_sorted
+  theorem list_sorted_snd_fst_nonempty [Compare α] {{ a b : α }} {{ as : List α }} (a_le_b: a <= b) (aas_sorted : (a :: as).sorted) (bbs_sorted : (b :: bs).sorted) :
+    List.sorted (b :: List.concat_sorted (a :: as) bs) := by
+    match bs with
+    | [] => 
+      simp
+      apply And.intro
+      assumption
+      assumption
+    | b' :: bs' =>
+    simp
+    cases h:Compare.ord a b' <;> simp 
+    repeat any_goals apply And.intro
+    exact bbs_sorted.left
+    apply list_sorted_snd_fst_nonempty
+    apply Or.inl; assumption
+    assumption
+    exact bbs_sorted.right
+    assumption
+    apply Or.inr
+    apply Compare.ord_symm
+    assumption
+    match as with
+    | [] =>
+      apply list_sorted_snd_fst_empty
+      exact bbs_sorted.right
+    | a'::as' => 
+      apply list_sorted_snd_fst_nonempty
+      have a_eq_b' : a = b' := by
+        apply Compare.ord_implies_eq
+        assumption
+      rw [←a_eq_b']
+      exact aas_sorted.left
+      exact aas_sorted.right
+      exact bbs_sorted.right
+    assumption
+    apply list_sorted_fst_snd_nonempty
+    rw [Compare.ord_flip] at h
+    simp at h
+    apply Or.inl
+    assumption
+    exact aas_sorted
+    exact bbs_sorted.right
+end
+  termination_by
+    list_sorted_fst_snd_nonempty => (as, bs)
+    list_sorted_snd_fst_nonempty => (as, bs)
 
 theorem concat_sorted_empty_right [Compare α] (a_list: List α) : List.concat_sorted a_list [] = a_list := by
   cases a_list <;> simp
