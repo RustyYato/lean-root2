@@ -26,12 +26,12 @@ def List.sorted_by (list: List a) (P : a -> a -> Prop) : Prop := match list with
   | a :: b :: xs => P a b ∧ sorted_by (b :: xs) P
 
 @[simp]
-def List.sorted (list: List nat) : Prop := match list with
+def List.sorted [Compare α] (list: List α) : Prop := match list with
   | [] | [_] => True
   | a :: b :: xs => b <= a ∧ sorted (b :: xs)
 
 @[simp]
-def List.concat_sorted (a b: List nat) : List nat := match a with
+def List.concat_sorted [Compare α] (a b: List α) : List α := match a with
 | [] => b
 | a₀::as => match b with
 | [] => a₀::as
@@ -41,25 +41,25 @@ def List.concat_sorted (a b: List nat) : List nat := match a with
 | .Greater => a₀::(List.concat_sorted as (b₀::bs))
 termination_by List.concat_sorted a b => (a, b)
 
-theorem pop_sorted {{a: nat}} {{as: List nat}} : (a::as).sorted -> as.sorted := by
+theorem pop_sorted [Compare α] {{a: α}} {{as: List α}} : (a::as).sorted -> as.sorted := by
   intro list_sorted
   match as with
   | [] => trivial
   | a₀::as₀ => exact list_sorted.right
 
-theorem singleton_list_is_sorted {a: nat} : [a].sorted := by simp
+theorem singleton_list_is_sorted [Compare α] {a: α} : [a].sorted := by simp
 
-theorem list_concat_sorted_fst (b_lt_a: b < a) : a :: (List.concat_sorted as (b::bs)) = List.concat_sorted (a::as) (b::bs) := by
+theorem list_concat_sorted_fst [Compare α] {{ a b : α }} (b_lt_a: b < a) : a :: (List.concat_sorted as (b::bs)) = List.concat_sorted (a::as) (b::bs) := by
   unfold ord_lt at b_lt_a
   simp at b_lt_a
-  rw [ord_imp_flip] at b_lt_a
+  rw [Compare.ord_flip] at b_lt_a
   simp
   split
   rw [b_lt_a] at *; contradiction
   rw [b_lt_a] at *; contradiction
   rfl
 
-theorem list_concat_sorted_snd (a_lt_b: a < b) : b :: (List.concat_sorted (a::as) bs) = List.concat_sorted (a::as) (b::bs)  := by
+theorem list_concat_sorted_snd [Compare α] {{ a b : α }} (a_lt_b: a < b) : b :: (List.concat_sorted (a::as) bs) = List.concat_sorted (a::as) (b::bs)  := by
   unfold ord_lt at a_lt_b
   simp at a_lt_b
   simp
@@ -68,7 +68,7 @@ theorem list_concat_sorted_snd (a_lt_b: a < b) : b :: (List.concat_sorted (a::as
   rfl
   rw [a_lt_b] at *; contradiction
 
-theorem concat_sorted_empty_right (a_list: List nat) : List.concat_sorted a_list [] = a_list := by
+theorem concat_sorted_empty_right [Compare α] (a_list: List α) : List.concat_sorted a_list [] = a_list := by
   cases a_list <;> simp
 
 def len_le_than_two (list: List a) : Prop := match list with
@@ -76,7 +76,8 @@ def len_le_than_two (list: List a) : Prop := match list with
   | _ => False
 
 theorem concat_sorted_comm 
-  (alist blist: List nat)
+  [Compare α]
+  {{alist blist: List α}}
   (a_sorted: alist.sorted) (b_sorted: blist.sorted)
   : alist.concat_sorted blist = blist.concat_sorted alist := by
   unfold List.concat_sorted
@@ -87,14 +88,14 @@ theorem concat_sorted_comm
     simp
     split <;> simp
     have a_eq_b : a = b := by
-      apply ord_imp_eq
+      apply Compare.ord_implies_eq
       assumption
     rw [a_eq_b]
-    rw [ord_imp_id]
+    rw [Compare.ord_id]
     simp
     apply concat_sorted_comm <;> (apply pop_sorted; assumption)
     next a_lt_b => {
-      rw [ord_imp_flip] at a_lt_b
+      rw [Compare.ord_flip] at a_lt_b
       simp at a_lt_b
       rw [a_lt_b]
       simp
@@ -104,7 +105,7 @@ theorem concat_sorted_comm
       assumption
     }
     next a_gt_b => {
-      rw [ord_imp_flip] at a_gt_b
+      rw [Compare.ord_flip] at a_gt_b
       simp at a_gt_b
       rw [a_gt_b]
       simp

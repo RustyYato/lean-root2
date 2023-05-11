@@ -20,7 +20,7 @@ instance ord_lt [Compare α] : LT α where
 instance ord_le [Compare α] : LE α where
   le a b := Compare.ord a b = Order.Less ∨ Compare.ord a b = Order.Eq
 
-theorem Compare.ord_symm {{ α: Type }} [Compare α] (a b: α) : ord a b = Order.Eq -> ord b a = Order.Eq := by
+theorem Compare.ord_symm {{ α: Sort _ }} [Compare α] (a b: α) : ord a b = Order.Eq -> ord b a = Order.Eq := by
   intro ab_eq
   have ab_eq := ord_implies_eq ab_eq
   rw [ab_eq]
