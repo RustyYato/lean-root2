@@ -211,54 +211,10 @@ theorem concat_sorted_comm
     }
   termination_by concat_sorted_comm => (alist, blist)
 
-theorem concat_sorted_keeps_sorted_small_1_2
-  [inst: Compare α]
-  {{ a b₀ b₁ : α }}
-  (b_sorted: (b₀::b₁::bs).sorted)
-  : ([a].concat_sorted (b₀::b₁::bs)).sorted := by
-    simp
-    split <;> simp
-    repeat any_goals apply And.intro
-    apply Or.inr
-    apply Compare.ord_symm
-    assumption
-    exact b_sorted.left
-    exact b_sorted.right
-    {
-      cases h:Compare.ord a b₁ <;> simp
-      any_goals apply And.intro
-      exact b_sorted.left
-      {
-        apply list_sorted_snd_fst_nonempty
-        apply Or.inl; assumption
-        exact singleton_list_is_sorted
-        exact b_sorted.right
-      }
-      apply Or.inl
-      assumption
-      apply And.intro
-      apply Or.inr; apply Compare.ord_symm; assumption
-      exact b_sorted.right
-      apply Or.inl
-      assumption
-      apply And.intro
-      apply Or.inl
-      rw [Compare.ord_flip]
-      assumption
-      exact b_sorted.right
-    }
-    apply Or.inl
-    rw [Compare.ord_flip]
-    simp
-    assumption
-    exact b_sorted.left
-    exact b_sorted.right
-
-theorem concat_sorted_keeps_sorted_small
+theorem concat_sorted_keeps_sorted
   [inst: Compare α]
   (alist blist: List α)
   (a_sorted: alist.sorted) (b_sorted: blist.sorted)
-  (a_or_b_small: len_le_than_two alist ∨ len_le_than_two blist)
   : (alist.concat_sorted blist).sorted := 
 by
   match h₁:alist, h₂:blist with
@@ -287,44 +243,43 @@ by
       rw [Compare.ord_flip]
       assumption
     }
-  | [a], b₀ :: b₁ :: bs =>
-    apply concat_sorted_keeps_sorted_small_1_2
-    repeat assumption
-  | a₀ :: a₁ :: as, [b] =>
-    rw [concat_sorted_comm a_sorted b_sorted]
-    apply concat_sorted_keeps_sorted_small_1_2
-    repeat assumption
-  | a₀ :: a₁ :: as, b₀ :: b₁ :: bs =>
+  | a :: as, b :: bs =>
     simp
-    cases h₀₀:Compare.ord a₀ b₀ <;> simp
-    -- repeat any_goals cases h₀₁:Compare.ord a₁ b₁ <;> simp
+    cases h:Compare.ord a b <;> simp
     {
-      cases h₀₁:Compare.ord a₀ b₁ <;> simp
-      admit
-      admit
-      cases h₁₁:Compare.ord a₁ b₁ <;> simp
-      admit
-      admit
-      admit
+      apply list_sorted_snd_fst_nonempty
+      apply Or.inl
+      assumption
+      assumption
+      assumption
     }
     {
-      cases h₀₁:Compare.ord a₁ b₁ <;> simp
-      admit
-      admit
-      admit
-    }
-    {
-      cases h₁₀:Compare.ord a₁ b₀ <;> simp
+      apply And.intro
       {
-        cases h₁₁:Compare.ord a₁ b₁ <;> simp
-        admit
-        admit
-        admit
+        apply Or.inr
+        apply Compare.ord_symm
+        assumption
       }
-      admit
-      admit
-
+      match as with
+      | [] => apply list_sorted_snd_fst_empty; assumption
+      | a'::as' =>
+        apply list_sorted_snd_fst_nonempty
+        have a_eq_b := Compare.ord_implies_eq h
+        rw [←a_eq_b]
+        exact a_sorted.left
+        exact a_sorted.right
+        assumption
     }
+    {
+      apply list_sorted_fst_snd_nonempty
+      apply Or.inl
+      rw [Compare.ord_flip]
+      assumption
+      assumption
+      assumption
+    }
+
+
 
 inductive PrimeFactorization (n: nat) : Type :=
   | PrimeFactors : (factors: List nat)
