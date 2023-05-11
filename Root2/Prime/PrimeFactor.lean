@@ -71,131 +71,49 @@ theorem list_concat_sorted_snd (a_lt_b: a < b) : b :: (List.concat_sorted (a::as
 theorem concat_sorted_empty_right (a_list: List nat) : List.concat_sorted a_list [] = a_list := by
   cases a_list <;> simp
 
-theorem concat_sorted_keeps_sorted (alist blist: List nat) (a_sorted: alist.sorted) (b_sorted: blist.sorted) : (alist.concat_sorted blist).sorted := 
-by
+def len_le_than_two (list: List a) : Prop := match list with
+  | [] | [_] | [_, _] => True
+  | _ => False
+
+theorem concat_sorted_comm 
+  (alist blist: List nat)
+  (a_sorted: alist.sorted) (b_sorted: blist.sorted)
+  : alist.concat_sorted blist = blist.concat_sorted alist := by
   unfold List.concat_sorted
   match alist, blist with
-  | [], _  => simp; assumption
-  | _,  []  => split; assumption; exact a_sorted
-  | [a], [b] =>
+  | [], _ => simp; split <;> rfl
+  | _, [] => simp; split <;> rfl
+  | a::as, b::bs => 
     simp
     split <;> simp
-    apply Or.inr
-    apply Compare.ord_symm
-    assumption
-    apply Or.inl
-    assumption
-    apply Or.inl
-    rw [Compare.ord_flip]
-    assumption
-  | [a], b₀::b₁::bs => 
-    simp
-    split <;> simp
-    any_goals (split <;> simp)
-    repeat any_goals apply And.intro
-    any_goals unfold ord_le; simp
-    any_goals (apply Or.inr; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; assumption; done)
-    any_goals (exact b_sorted.left)
-    any_goals (exact b_sorted.right)
-    rw [list_concat_sorted_snd]
-    apply concat_sorted_keeps_sorted
-    any_goals (exact a_sorted)
-    any_goals (exact b_sorted.right)
-    any_goals assumption
-  | a₀::a₁::as, [b] =>
-    simp
-    split <;> simp
-    any_goals (split <;> simp)
-    repeat any_goals apply And.intro
-    any_goals unfold ord_le; simp
-    any_goals (apply Or.inr; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; assumption; done)
-    any_goals (exact a_sorted.left)
-    any_goals (exact a_sorted.right)
-    {
-      cases a_sorted.left
-      apply Or.inl
-      have a₀_eq_b : a₀ = b := by {
-        apply Compare.ord_implies_eq
-        assumption
-      }
-      rw [←a₀_eq_b]
+    have a_eq_b : a = b := by
+      apply ord_imp_eq
       assumption
-      apply Or.inr
-      apply @ord_imp_trans a₁ a₀ b
-      repeat assumption
-    }
-    {
-      rw [concat_sorted_empty_right]
-      have a₁_eq_b : a₁ = b := by {
-        apply Compare.ord_implies_eq
-        assumption
-      }
-      rw [←a₁_eq_b]
-      exact a_sorted.right
-    }
-    {
-      rw [list_concat_sorted_fst]
-      apply concat_sorted_keeps_sorted
-      exact a_sorted.right
+    rw [a_eq_b]
+    rw [ord_imp_id]
+    simp
+    apply concat_sorted_comm <;> (apply pop_sorted; assumption)
+    next a_lt_b => {
+      rw [ord_imp_flip] at a_lt_b
+      simp at a_lt_b
+      rw [a_lt_b]
+      simp
+      apply concat_sorted_comm
       assumption
-      apply Compare.ord_implies_gt
+      apply pop_sorted
       assumption
     }
-  | [a₀, a₁], [b₀, b₁] =>
-    simp
-    split <;> split <;> simp
-    repeat any_goals (repeat apply And.intro)
-    any_goals unfold ord_le; simp
-    any_goals (apply Or.inr; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; assumption; done)
-    any_goals (exact a_sorted.left)
-    any_goals (exact b_sorted.left)
-    
-    admit
-  | a₀::a₁::as, b₀::b₁::bs => 
-    simp
-    split <;> split <;> simp
-    repeat any_goals (repeat apply And.intro)
-    any_goals unfold ord_le; simp
-    any_goals (apply Or.inr; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; rw [ord_imp_flip]; assumption; done)
-    any_goals (apply Or.inl; assumption; done)
-    any_goals (exact a_sorted.left)
-    any_goals (exact b_sorted.left)
-    any_goals split <;> simp
-    repeat any_goals (repeat apply And.intro)
-    any_goals (
-      rw [list_concat_sorted_snd]
-      apply concat_sorted_keeps_sorted
-    )
-    any_goals (
-      rw [list_concat_sorted_fst]
-      apply concat_sorted_keeps_sorted
-    )
-    any_goals unfold ord_lt; simp
-    any_goals (exact a_sorted.left)
-    any_goals (exact b_sorted.left)
-    any_goals (exact a_sorted.right)
-    any_goals (exact b_sorted.right)
-    any_goals (exact a_sorted)
-    any_goals (exact b_sorted)
-    any_goals assumption
-    any_goals (rw [ord_imp_flip]; assumption; done)
-
-    apply @nat.ord_imp_le_trans a₁ b₁ b₀
-    apply Or.inr
-    assumption
-    exact b_sorted.left
-
-    rw [list_concat_sorted_snd]
-
-    
-    admit
+    next a_gt_b => {
+      rw [ord_imp_flip] at a_gt_b
+      simp at a_gt_b
+      rw [a_gt_b]
+      simp
+      apply concat_sorted_comm
+      apply pop_sorted
+      assumption
+      assumption
+    }
+  termination_by concat_sorted_comm => (alist, blist)
 
 inductive PrimeFactorization (n: nat) : Type :=
   | PrimeFactors : (factors: List nat)
