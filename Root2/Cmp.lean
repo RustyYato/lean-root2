@@ -109,6 +109,13 @@ def Compare.ord_not_greater {{ α: Sort _ }} [Compare α] {{ a b : α }} (ord_ab
   apply Or.inr; rfl
   contradiction
 
+def Compare.flip {{ α: Sort _ }} [Compare α] {{ a b : α }} : ord a b = (ord b a).flip := by
+  cases h:ord a b  <;> (
+    rw [Compare.ord_flip] at h
+    rw [h]
+    rfl
+  )
+
 def Compare.ord_flip_ne {{ α: Sort _ }} [Compare α] {{ a b : α }} {{ o: Order }} (ord_ab: ord a b ≠ o) : (ord b a ≠ o.flip) := by
   intro ord_ba
   rw [ord_flip] at ord_ba
@@ -119,6 +126,10 @@ def Compare.ord_from_eq {{ α: Sort _ }} [Compare α] {{ a b : α }} : a = b -> 
   intro a_eq_b
   rw [a_eq_b]
   apply ord_id
+
+def Compare.ord_implies_lt {{ α: Sort _ }} [Compare α] {{ a b: α }}
+  (a_lt_b: ord a b = Order.Less) : a < b := by
+  exact a_lt_b
 
 def Compare.ord_implies_gt {{ α: Sort _ }} [Compare α] {{ a b: α }}
   (a_gt_b: ord a b = Order.Greater) : a > b := by
@@ -138,6 +149,11 @@ def Compare.ord_implies_ne {{ α: Sort _ }} [Compare α] {{ a b: α }}
     rw [ord_id] at h
     contradiction
   | .Eq => contradiction
+
+def Compare.le_id {{ α: Sort _ }} [Compare α] {{ a: α }} :
+  a <= a := by
+  apply Or.inr
+  exact Compare.ord_id
 
 def Compare.lt_trans {{ α: Sort _ }} [Compare α] {{ a b c: α }} :
   a < b -> b < c -> a < c := by
