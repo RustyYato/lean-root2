@@ -116,6 +116,192 @@ theorem concat_sorted_comm
     }
   termination_by concat_sorted_comm => (alist, blist)
 
+theorem concat_sorted_keeps_sorted_small
+  [inst: Compare α]
+  (alist blist: List α)
+  (a_sorted: alist.sorted) (b_sorted: blist.sorted)
+  (a_or_b_small: len_le_than_two a_list ∨ len_le_than_two b_list)
+  : (alist.concat_sorted blist).sorted := 
+by
+  match h₁:alist, h₂:blist with
+  | [], _ => simp; assumption
+  | _, [] => unfold List.concat_sorted; split; assumption; exact a_sorted
+  | [a], [b] =>
+    unfold List.concat_sorted
+    split <;> simp
+    next a' ns list_a_eq => {
+      match ns with 
+      | _ :: _ => simp at list_a_eq
+      | [] => 
+      simp at list_a_eq
+      rw [←list_a_eq]
+      simp
+      split
+      simp
+      apply Or.inr
+      apply Compare.ord_symm
+      assumption
+      simp
+      apply Or.inl
+      assumption
+      simp
+      apply Or.inl
+      rw [Compare.ord_flip]
+      assumption
+    }
+  | [a], b₀ :: b₁ :: bs =>
+    simp
+    split <;> simp
+    repeat any_goals apply And.intro
+    apply Or.inr
+    apply Compare.ord_symm
+    assumption
+    exact b_sorted.left
+    exact b_sorted.right
+    admit
+    apply Or.inl
+    rw [Compare.ord_flip]
+    simp
+    assumption
+    exact b_sorted.left
+    exact b_sorted.right
+  | a₀ :: a₁ :: as, [b] =>
+    rw [concat_sorted_comm a_sorted b_sorted]
+    simp
+    split <;> simp
+    repeat any_goals apply And.intro
+    apply Or.inr
+    apply Compare.ord_symm
+    assumption
+    exact a_sorted.left
+    exact a_sorted.right
+    admit
+    apply Or.inl
+    rw [Compare.ord_flip]
+    simp
+    assumption
+    exact a_sorted.left
+    exact a_sorted.right
+  | [a₀, a₁], [b₀,b₁] => 
+    unfold List.concat_sorted
+    simp
+    split <;> simp
+    have a₀_eq_b₀ : a₀ = b₀ := by
+      apply Compare.ord_implies_eq
+      assumption
+    rw [a₀_eq_b₀]
+    apply And.intro
+    apply Or.inr
+    exact Compare.ord_id
+    split <;> simp
+    have a₁_eq_b₁ : a₁ = b₁ := by
+      apply Compare.ord_implies_eq
+      assumption
+    rw [a₁_eq_b₁]
+    apply And.intro
+    exact b_sorted.left
+    apply Or.inr
+    exact Compare.ord_id
+    
+    apply And.intro
+    exact b_sorted.left
+    apply Or.inl
+    assumption
+    apply And.intro
+    rw [←a₀_eq_b₀]
+    exact a_sorted.left
+    apply Or.inl
+    rw [Compare.ord_flip]
+    simp
+    assumption
+    
+    split
+    have a₀_eq_b₁ : a₀ = b₁ := by
+      apply Compare.ord_implies_eq
+      assumption
+    rw [a₀_eq_b₁]
+    simp
+    repeat any_goals apply And.intro
+    exact b_sorted.left
+    exact Or.inr Compare.ord_id
+    rw [←a₀_eq_b₁]
+    exact a_sorted.left
+    exact b_sorted.left
+    
+    apply Or.inl
+    assumption
+    exact a_sorted.left
+    exact singleton_list_is_sorted
+    apply Or.inl
+    assumption
+    
+    split <;> simp
+    have a₁_eq_b₁ : a₁ = b₁ := by
+      apply Compare.ord_implies_eq
+      assumption
+    apply And.intro
+    exact a_sorted.left
+    rw [a₁_eq_b₁]
+    apply Or.inr; exact Compare.ord_id
+    apply And.intro
+    apply Or.inl
+    rw [Compare.ord_flip]
+    assumption
+    apply Or.inl
+    assumption
+    apply And.intro
+    exact a_sorted.left
+    apply Or.inl
+    rw [Compare.ord_flip]
+    assumption
+    
+    split <;> simp
+    have a₁_eq_b₀ : a₁ = b₀ := by
+      apply Compare.ord_implies_eq
+      assumption
+    repeat any_goals apply And.intro
+    exact a_sorted.left
+    rw [a₁_eq_b₀]
+    apply Or.inr; exact Compare.ord_id
+    exact b_sorted.left
+    apply Or.inl
+    rw [Compare.ord_flip]
+    assumption
+    split <;> simp
+    have a₁_eq_b₁ : a₁ = b₁ := by
+      apply Compare.ord_implies_eq
+      assumption
+    apply And.intro
+    rw [a₁_eq_b₁]
+    exact b_sorted.left
+    rw [a₁_eq_b₁]
+    apply Or.inr; exact Compare.ord_id
+    apply And.intro
+    exact b_sorted.left
+    apply Or.inl
+    assumption
+    apply And.intro
+    apply Or.inl
+    assumption
+    apply Or.inl
+    rw [Compare.ord_flip]
+    assumption
+    exact a_sorted.left
+    apply Or.inl
+    rw [Compare.ord_flip]
+    assumption
+    exact b_sorted.left
+  | [a₀, a₁], b₀::b₁::bs =>
+    simp
+    split
+    admit
+    admit
+    admit
+  | a₀::a₁::as, [b₀, b₁] =>
+    admit
+  | _::_::_::_, _::_::_::_ =>
+    admit
+
 inductive PrimeFactorization (n: nat) : Type :=
   | PrimeFactors : (factors: List nat)
     -> List.allP factors nat.prime
