@@ -49,3 +49,8 @@ theorem divisible.mul (d: divisible a b): divisible (nat.mul a c) b := by
   exists nat.mul b₀ c
   rw [a_eq_bb₀]
   rw [nat.mul_perm0]
+
+theorem divisible.not (nd: ¬ divisible a b) : not_divisible a b := by
+  intro x a_eq_bx
+  apply nd
+  exists x

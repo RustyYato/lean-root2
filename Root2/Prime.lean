@@ -286,3 +286,13 @@ theorem nat.prime_gt_one (p: nat.prime n) : nat.zero.inc < n := by
   | .zero => contradiction
   | .inc .zero => contradiction
   | .inc (.inc n') => trivial
+
+def nat.prime_gt_zero {{n: nat}} (_: nat.prime n) : nat.zero < n := match n with
+  | nat.inc _ => nat.zero_lt_inc _
+
+def nat.prime_ne_zero {{n: nat}} (_: nat.prime n) : n ≠ nat.zero := match n with
+  | nat.inc (.inc _) => by simp
+
+def nat.prime_ne_one {{n: nat}} (_: nat.prime n) : n ≠ nat.zero.inc := match n with
+  | nat.inc (.inc _) => by simp
+    

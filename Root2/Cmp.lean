@@ -224,7 +224,7 @@ instance Compare.dec_eq [Compare α] (a b: α) : Decidable (a = b) := by
     apply Compare.ord_implies_eq
     assumption
 
-instance [Compare α] (a b: α) : Decidable (a ≠ b) := by
+instance Compare.dec_ne [Compare α] (a b: α) : Decidable (a ≠ b) := by
   match h:Compare.ord a b with
   | .Greater | .Less =>
     apply Decidable.isTrue
@@ -240,18 +240,32 @@ instance [Compare α] (a b: α) : Decidable (a ≠ b) := by
     apply Compare.ord_implies_eq
     assumption
 
-instance [Compare α] (a b: α) : Decidable (a < b) := by
+instance Compare.dec_lt [Compare α] (a b: α) : Decidable (a < b) := by
   simp
   apply Order.dec_eq
 
-instance [Compare α] (a b: α) : Decidable (a <= b) := by
+instance Compare.dec_le [Compare α] (a b: α) : Decidable (a <= b) := by
   simp
   apply dec_or <;> apply Order.dec_eq
 
-instance [Compare α] (a b: α) : Decidable (a > b) := by
+instance Compare.dec_gt [Compare α] (a b: α) : Decidable (a > b) := by
   simp
   apply Order.dec_eq
 
-instance [Compare α] (a b: α) : Decidable (a >= b) := by
+instance Compare.dec_ge [Compare α] (a b: α) : Decidable (a >= b) := by
   simp
   apply dec_or <;> apply Order.dec_eq
+
+theorem Compare.not_lt_and_le [Compare α] (a b: α) : a < b -> b <= a -> False := by
+  intro a_lt_b b_le_a
+  unfold LT.lt ord_lt at a_lt_b
+  simp at a_lt_b
+  match b_le_a  with
+  | .inl b_le_a => 
+    rw [Compare.ord_flip] at b_le_a
+    rw [b_le_a] at a_lt_b
+    contradiction
+  | .inr b_eq_a =>
+    rw [Compare.ord_symm _ _ b_eq_a] at a_lt_b
+    contradiction
+

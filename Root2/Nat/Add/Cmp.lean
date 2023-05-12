@@ -15,6 +15,27 @@ theorem nat.le_add_irr (a b c: nat) : (add a b <= add a c) = (b <= c) := by
   simp
   apply nat.le_add_irr a₀
 
+theorem nat.le_add_irr2 (a b c d: nat) (a_le_c: a <= c) (b_le_d: b <= d) : (add a b <= add c d) := by
+  match c with
+  | .zero =>
+    have a_eq_zero := nat.le_zero a a_le_c
+    rw [a_eq_zero]
+    rw [nat.add_zero, nat.add_zero]
+    assumption
+  | .inc c₀ =>
+    match a with
+    | .zero =>
+      rw [nat.add_zero]
+      have d_le_add := d.a_less_a_plus_b c₀.inc
+      rw [nat.add_comm]
+      exact nat.le_trans b_le_d d_le_add
+    | .inc a₀ =>
+      simp
+      rw [nat.le_inc_irr]
+      apply nat.le_add_irr2
+      rw [nat.le_inc_irr] at a_le_c
+      repeat assumption
+
 theorem nat.add_imp_le {{a b c: nat}} : add a b <= c -> b <= c := by
   match a with
   | nat.zero => rw [nat.add_zero]; exact id

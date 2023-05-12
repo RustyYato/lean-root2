@@ -478,9 +478,6 @@ theorem concat_preserves_any {{ α: Type _ }} {{ P: α -> Prop }} {{a b: List α
         apply Or.inr
         assumption
 
-def prime_gt_zero (n: nat) (_: nat.prime n) : nat.zero < n := match n with
-  | nat.inc _ => nat.zero_lt_inc _
-
 def PrimeFactorization.to_list (p: PrimeFactorization n) : List nat := match p with
   | .PrimeFactors factors _ _ _ => factors
 
@@ -500,8 +497,8 @@ def PrimeFactorization.merge {{a b: nat}}
     {
       rw [a_product, b_product]
       apply mul_sorted_list_products
-      exact all_implies a_products a_primes prime_gt_zero
-      exact all_implies b_products b_primes prime_gt_zero
+      exact all_implies a_products a_primes nat.prime_gt_zero
+      exact all_implies b_products b_primes nat.prime_gt_zero
     }
 
 def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n := by
@@ -599,6 +596,130 @@ theorem sorted_def [Compare α] {{ a: α }} (as_sorted: (a :: as).sorted) : as.a
     exact List.mapAllP this (by
       intro x x_le_a'
       exact Compare.le_trans x_le_a' as_sorted.left)
+
+def contains (as: List α) (a: α) : Prop := match as with
+  | [] => False
+  | x :: xs => a = x ∨ contains xs a
+
+def apply_all {{as: List α}} (all: List.allP as P) (a: α) (c: contains as a) : P a := by
+  match as with
+  | [] => contradiction
+  | x :: xs =>
+    match c with
+    | .inl a_eq_x =>
+      rw [a_eq_x]
+      exact all.left
+    | .inr xs_contains =>
+      apply apply_all all.right a xs_contains
+
+@[simp]
+def PrimeFactorization.factors (f: PrimeFactorization n) : List nat := match f with
+  | .PrimeFactors factors _ _ _ => factors
+
+theorem all_factors_divisible (f: PrimeFactorization n) : f.factors.allP (λ x => divisible n x) := by
+  have .PrimeFactors factors fprimes fsorted fdef := f
+  match factors with
+  | [] => trivial
+  | f::fs =>
+    apply And.intro
+    exists (list_product fs)
+    have := all_factors_divisible (.PrimeFactors fs fprimes.right (pop_sorted fsorted) (by rfl))
+    simp at this
+    apply List.mapAllP this
+    intro x xf
+    have ⟨ xf, prf ⟩ := xf
+    simp
+    exists (nat.mul f xf)
+    rw [nat.mul_perm0, nat.mul_comm x, ← nat.mul_perm0, ←prf]
+    exact fdef
+  
+theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
+  ∀p:nat, p.prime -> divisible n p -> contains f.factors p := by
+  match f with
+  | .PrimeFactors nfactors nprimes nsorted ndef =>
+  intro p pprime pdivis
+  match nfactors with
+  | [] => 
+    simp at ndef
+    rw [ndef] at pdivis
+    have p_le_one := pdivis.is_le (nat.zero_lt_inc _)
+    have p_gt_one := nat.prime_gt_one pprime
+    have := Compare.not_lt_and_le _ _ p_gt_one p_le_one
+    contradiction
+  | x::xs =>
+    have xs_complete := (PrimeFactorization.PrimeFactors xs nprimes.right (pop_sorted nsorted) (by rfl)).is_complete
+    simp at xs_complete
+    simp at ndef
+    rw [ndef] at pdivis
+    admit
+    
+
+    -- unfold contains
+    -- simp
+    -- match Compare.dec_eq p x with
+    -- | .isTrue p_eq_x =>
+    --   apply Or.inl
+    --   assumption
+    -- | .isFalse p_ne_x =>
+    --   apply Or.inr
+    --   apply factorization_is_complete (
+    --     PrimeFactorization.PrimeFactors xs nprimes.right (pop_sorted nsorted) (by rfl)
+    --   ) p pprime
+    --   rw [ndef] at pdivis
+    --   have ⟨ y, prf ⟩ := pdivis
+    --   simp at prf
+
+    --   have xprime := nprimes.left
+    --   match (xprime p).left with
+    --   | .inr (.inl _) =>
+    --     have := nat.prime_ne_one pprime
+    --     contradiction
+    --   | .inr (.inr _) =>
+    --     have := Ne.symm p_ne_x
+    --     contradiction
+    --   | .inl not_divis_xp =>
+
+    --   match (pprime x).left with
+    --   | .inr (.inl _) =>
+    --     have := nat.prime_ne_one xprime
+    --     contradiction
+    --   | .inr (.inr _) =>
+    --     have := Ne.symm p_ne_x
+    --     contradiction
+    --   | .inl not_divis_px =>
+      
+
+
+
+    -- admit
+
+
+-- theorem biggest_prime_factor (n: nat) (n_gt_one: nat.zero.inc < n) : ∃p: nat, p.prime ∧ divisible n p ∧ ∀q:nat, q.prime -> divisible n q -> q <= p := by
+--   have factorization := n.factorize (nat.lt_trans (nat.zero_lt_inc _) n_gt_one)
+--   match h:factorization with
+--   | .PrimeFactors nfactors nprimes nsorted ndef =>
+--   match nfactors with
+--   | [] =>
+--     simp at ndef
+--     rw [ndef] at n_gt_one
+--     contradiction
+--   | p::ns => 
+--   exists p
+--   apply And.intro
+--   exact nprimes.left
+--   apply And.intro
+--   have := all_factors_divisible factorization
+--   unfold PrimeFactorization.factors at this
+--   simp at this
+--   exact apply_all this p (by
+--     rw [h]
+--     simp
+--     unfold contains
+--     apply Or.inl; rfl)
+--   intro q qprime qdivisible
+--   clear h
+  
+--   admit
 
 theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
   match a with

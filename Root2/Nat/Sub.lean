@@ -79,12 +79,75 @@ theorem nat.sub_to_add {{a b c: nat}} (h: b <= c) (s: checked_sub c b h = a) : a
     | nat.zero => simp at s; rw [nat.add_zero_r]; apply Eq.symm; assumption
     | nat.inc b₀ => rw [nat.add_inc, nat.eq_inc_irr]; simp at s; simp at h; apply nat.sub_to_add <;> assumption
 
+theorem nat.sub_add {{ a b c }} (h: b <= c) : (checked_sub c b h = a) <-> (add a b = c) := by
+  apply Iff.intro
+  intro cs
+  exact nat.sub_to_add h cs
+  intro add
+  exact nat.add_to_sub add
 
 theorem nat.checked_sub_aa : ∀ a: nat, a.checked_sub a (nat.eq_to_le rfl) = nat.zero := by
   intro a
   apply nat.add_to_sub
   rw [nat.add_zero]
 
-theorem nat.checked_sub_zero : ∀ a: nat, a.checked_sub nat.zero (nat.zero_le _) = a := by
+theorem nat.checked_sub_zero : ∀ a: nat, ∀ {h}, a.checked_sub nat.zero h = a := by
   intro a
-  simp
+  match a with
+  | .zero =>
+    intro
+    simp
+  | .inc a₀ =>
+    intro
+    simp
+
+theorem nat.checked_zero_sub : ∀ a: nat, (h: a <= nat.zero) -> nat.zero.checked_sub a h = nat.zero := by
+  intro a h
+  match a with
+  | .zero => trivial
+  | .inc a₀ => cases h <;> contradiction
+
+theorem nat.sub_add_inv (h: b <= a) : add (checked_sub a b h) b = a := by
+  match a with
+  | .zero =>
+    rw [nat.checked_zero_sub]
+    simp
+    exact nat.le_zero b h
+  | .inc a₀ =>
+    match b with
+    | .zero =>
+      rw [nat.checked_sub_zero, nat.add_zero_r]
+    | .inc b₀ =>
+      simp
+      rw [nat.add_inc, nat.eq_inc_irr]
+      apply nat.sub_add_inv
+
+theorem nat.sub_equality_left : a = b -> ∀h₀ h₁, checked_sub a c h₀ = checked_sub b c h₁ := by
+  intro a_eq_b h₀ h₁
+  match a, b with
+  | .zero, .zero => simp
+  | .inc a₀, .inc b₀ =>
+    rw [eq_inc_irr] at a_eq_b
+    match c with
+    | .zero =>
+      simp
+      assumption
+    | .inc c₀ =>
+      simp
+      apply nat.sub_equality_left
+      assumption
+  | .inc _, .zero | .zero, .inc _ => contradiction
+
+theorem nat.sub_equality_right : a = b -> ∀h₀ h₁, checked_sub c a h₀ = checked_sub c b h₁ := by
+  intro a_eq_b h₀ h₁
+  match c with
+  | .zero => repeat rw [checked_zero_sub]
+  | .inc c₀ =>
+    match a, b with
+    | .zero, .zero => simp
+    | .inc a₀, .inc b₀ =>
+      rw [eq_inc_irr] at a_eq_b
+      simp
+      apply nat.sub_equality_right
+      assumption
+    | .inc _, .zero | .zero, .inc _ => contradiction
