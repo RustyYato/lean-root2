@@ -1,5 +1,6 @@
 import Root2.Prime
 import Root2.Prime.Factors
+import Root2.Prime.Divisible
 
 instance nat_gt_one {n: nat} : nat.zero.inc < nat.inc (nat.inc n) := by
   rw [nat.lt_inc_irr]
@@ -645,11 +646,31 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
     have := Compare.not_lt_and_le _ _ p_gt_one p_le_one
     contradiction
   | x::xs =>
+    simp
+    match Compare.dec_eq x p with
+    | .isTrue x_eq_p =>
+      rw [x_eq_p]
+      apply Or.inl
+      rfl
+    | .isFalse x_ne_p =>
+    apply Or.inr
     have xs_complete := (PrimeFactorization.PrimeFactors xs nprimes.right (pop_sorted nsorted) (by rfl)).is_complete
-    simp at xs_complete
-    simp at ndef
+    apply xs_complete p pprime
+    clear xs_complete
     rw [ndef] at pdivis
-    admit
+    match pdivis.prime pprime with
+    | .inl _ =>
+      have ⟨ xprime_def, _ ⟩  := nprimes.left p
+      match xprime_def with
+      | .inr (.inl _) => 
+        have := nat.prime_ne_one pprime
+        contradiction
+      | .inr (.inr _) => contradiction
+      | .inl _ => contradiction
+    | .inr _ =>
+      assumption
+
+#print axioms PrimeFactorization.is_complete
     
 
     -- unfold contains
@@ -736,12 +757,12 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
     have := nat.not_lt_id this
     contradiction
   | a::as, [] =>
-      have := primes_gt_one aprimes
-      simp at bdef
-      rw [bdef] at adef
-      rw [adef] at this
-      have := nat.not_lt_id this
-      contradiction
+    have := primes_gt_one aprimes
+    simp at bdef
+    rw [bdef] at adef
+    rw [adef] at this
+    have := nat.not_lt_id this
+    contradiction
   | a::as, b::bs =>
     simp
     have a_eq_b : a = b := by
@@ -749,10 +770,6 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
       have bsorted_def := sorted_def bsorted
       have aprime := aprimes.left
       have bprime := bprimes.left
-
-
-
-      
       admit
     apply And.intro
     exact a_eq_b
@@ -776,3 +793,5 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
     )
     simp at this
     exact this
+
+-- #print axioms PrimeFactorization.unique

@@ -32,7 +32,7 @@ theorem divisible.add_split {{a b c: nat}} (divis_ac: divisible (a.add c) b) (di
   have ⟨ f, c_eq_bf ⟩ := divis_c
   rw [c_eq_bf] at add_ac_eq_bq
   have := Eq.symm (nat.add_to_sub add_ac_eq_bq)
-
+  admit
 
 theorem divisible.sub {{a b: nat}} (b_le_a: b <= a) (d: divisible (a.checked_sub b b_le_a) b) : divisible a b := by
   have d_add := d.add_r
@@ -86,18 +86,18 @@ theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :
 
     admit
 
-theorem divisible.project_base (nd: ¬divisible a c) (cprime: c.prime): nat.mul a b = nat.mul c d -> divisible b c := by
-  intro mul
-  have dr := divrem.calc b c (nat.prime_gt_zero cprime)
-  have dr_def := Eq.symm dr.def
+-- theorem divisible.project_base (nd: ¬divisible a c) (cprime: c.prime): nat.mul a b = nat.mul c d -> divisible b c := by
+--   intro mul
+--   have dr := divrem.calc b c (nat.prime_gt_zero cprime)
+--   have dr_def := Eq.symm dr.def
   
-  match h:dr.remainder with 
-  | .zero =>
-    exists dr.quocient
-    rw [h, nat.add_zero, nat.mul_comm] at dr_def
-    assumption
-  | .inc r =>
-    rw [h] at dr_def
-    apply False.elim
-    rw [dr_def] at mul
-    simp at mul
+--   match h:dr.remainder with 
+--   | .zero =>
+--     exists dr.quocient
+--     rw [h, nat.add_zero, nat.mul_comm] at dr_def
+--     assumption
+--   | .inc r =>
+--     rw [h] at dr_def
+--     apply False.elim
+--     rw [dr_def] at mul
+--     simp at mul
