@@ -502,15 +502,14 @@ def PrimeFactorization.merge {{a b: nat}}
     }
 
 def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n := by
-  match h:n with
+  match n with
   | nat.inc nat.zero => 
     apply PrimeFactorization.PrimeFactors []
     all_goals trivial
   | nat.inc (nat.inc n₀) => 
-    rw [←h]
-    match n.classify_prime with
+    match n₀.inc.inc.classify_prime with
     | .Prime p _ => 
-      apply PrimeFactorization.PrimeFactors [n]
+      apply PrimeFactorization.PrimeFactors [n₀.inc.inc]
       simp
       assumption
       simp
@@ -518,7 +517,7 @@ def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n := by
       rw [nat.mul_one_r]
     | .Composite _ composite =>
       
-      match n.get_factors (plus_two_gt_one h) composite with
+      match n₀.inc.inc.get_factors rfl composite with
       | .MkFactors a b a_gt_one b_gt_one _ _ n_eq_ab =>
 
       have a_gt_zero := nat.lt_trans (nat.zero_lt_inc _) a_gt_one
@@ -532,7 +531,6 @@ def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n := by
   decreasing_by {
     simp_wf
     apply nat.size_of_lt
-    rw [←h] 
     assumption
   }
 
