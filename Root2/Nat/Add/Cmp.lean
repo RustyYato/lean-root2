@@ -8,6 +8,14 @@ theorem nat.a_less_a_plus_b (a b: nat) : a <= add a b := by
     rw [nat.add_inc_r, nat.le_inc_irr]
     apply nat.a_less_a_plus_b
 
+theorem nat.a_lt_a_plus_b (a b: nat) : a < add a (inc b) := by
+  match a with
+  | nat.zero => simp; apply nat.zero_lt_inc
+  | nat.inc a₀ =>
+    simp
+    rw [nat.lt_inc_irr]
+    apply nat.a_lt_a_plus_b
+
 theorem nat.le_add_irr (a b c: nat) : (add a b <= add a c) = (b <= c) := by
   match a with
   | nat.zero => simp

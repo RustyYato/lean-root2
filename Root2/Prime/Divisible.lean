@@ -1,5 +1,7 @@
 import Root2.Prime
 import Root2.Divisible
+import Root2.Nat.Sub.Add
+import Root2.Nat.Sub.Mul
 
 theorem divisible.sub_r {{a b: nat}} (d: divisible a b) (b_le_a: b <= a) : divisible (a.checked_sub b b_le_a) b := by
   match a with
@@ -55,9 +57,32 @@ theorem divisible.sub_mul {{a b c: nat}} (b_le_a: b.mul c <= a) (d: divisible (a
       rw [nat.mul_inc_r]) (by assumption) (by rw [←nat.mul_inc_r]; assumption)
     rw [sub_eq] at d
     clear sub_eq
+    rw [nat.sub_add_to_sub_sub_right] at d
+    apply (@divisible.sub (a.checked_sub (b.mul c₀)  _) b _ d).sub_mul
+    rw [nat.mul_inc_r] at b_le_a
+    have := (b.mul c₀).a_less_a_plus_b b
+    rw [nat.add_comm] at this
+    exact nat.le_trans this b_le_a
+    apply nat.add_to_sub_le
+    rw [←nat.mul_inc_r]
+    assumption
 
-        
-    admit
+theorem divisible.mul_sub {{ a b c: nat }} (d: divisible (nat.mul a b) c) : ∀ h, divisible (nat.mul (a.checked_sub c h) b) c := by
+ intro c_le_a
+ rw [nat.mul_sub_right]
+ have ⟨ x, prf ⟩ := d
+ exists (x.checked_sub b (by
+  
+  admit))
+ apply nat.add_to_sub_gen
+ rw [prf]
+ rw [←nat.mul_add]
+ match c with
+ | .zero => rfl
+ | .inc c₀ =>
+  rw [nat.mul_irr]
+  rw [nat.sub_add_inv]
+  apply nat.zero_lt_inc
 
 
 theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :
@@ -81,8 +106,7 @@ theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :
       rw [Compare.ord_flip] at h
       exact h
     clear h
-    
-    
+
 
     admit
 

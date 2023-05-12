@@ -57,7 +57,9 @@ theorem nat.eq_sub {{a b: nat}} (h: b = a) : checked_sub a b (nat.eq_to_le h) = 
       apply nat.eq_sub
       assumption
 
-theorem nat.add_to_sub {{a b c: nat}} (h: add a b = c) : checked_sub c b (nat.add_imp_le (nat.eq_to_le h)) = a := by
+
+theorem nat.add_to_sub_gen {{a b c: nat}} (h: add a b = c) : ∀h₀, checked_sub c b h₀ = a := by
+  intro
   match b with
   | nat.zero => simp; rw [nat.add_zero_r] at h; apply Eq.symm; assumption
   | nat.inc b₀ => match c with
@@ -66,9 +68,29 @@ theorem nat.add_to_sub {{a b c: nat}} (h: add a b = c) : checked_sub c b (nat.ad
       contradiction
     | nat.inc c₀ =>
       simp
-      apply nat.add_to_sub
+      apply nat.add_to_sub_gen
       rw [nat.add_inc, nat.eq_inc_irr] at h
       assumption
+
+theorem nat.add_to_sub {{a b c: nat}} (h: add a b = c) : checked_sub c b (nat.add_imp_le (nat.eq_to_le h)) = a := by
+  apply add_to_sub_gen <;> assumption
+
+
+theorem nat.add_to_sub_le {{a b c: nat}} (h: add a b <= c) : ∀ h, a <= checked_sub c b h := by
+  intro b_le_c
+  match b with
+  | .zero =>
+    simp
+    rw [nat.add_zero_r] at h
+    assumption
+  | .inc b₀ =>
+  match c with
+  | nat.zero => 
+    cases b_le_c <;> contradiction
+  | nat.inc c₀ =>
+    simp
+    rw [nat.add_inc, nat.le_inc_irr] at h
+    apply nat.add_to_sub_le h
 
 theorem nat.sub_to_add {{a b c: nat}} (h: b <= c) (s: checked_sub c b h = a) : add a b = c  := by
   match c with
