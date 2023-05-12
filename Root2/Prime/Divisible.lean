@@ -68,21 +68,38 @@ theorem divisible.sub_mul {{a b c: nat}} (b_le_a: b.mul c <= a) (d: divisible (a
     assumption
 
 theorem divisible.mul_sub {{ a b c: nat }} (d: divisible (nat.mul a b) c) : ∀ h, divisible (nat.mul (a.checked_sub c h) b) c := by
- intro c_le_a
- rw [nat.mul_sub_right]
- have ⟨ x, prf ⟩ := d
- exists (x.checked_sub b (by
+  intro c_le_a
+
+  match a with
+  | nat.zero =>
+    rw [nat.checked_zero_sub]
+    rw [nat.mul_zero]
+    apply divisible.zero
+  | nat.inc a₀ =>
   
-  admit))
- apply nat.add_to_sub_gen
- rw [prf]
- rw [←nat.mul_add]
- match c with
- | .zero => rfl
- | .inc c₀ =>
-  rw [nat.mul_irr]
-  rw [nat.sub_add_inv]
-  apply nat.zero_lt_inc
+  rw [nat.mul_sub_right]
+  have ⟨ x, prf ⟩ := d
+  
+  exists (x.checked_sub b (by
+    apply @nat.mul_le_cmp a₀.inc b c x
+    rw [prf]
+    apply nat.le_id
+    apply nat.zero_lt_inc
+    assumption))
+  apply nat.add_to_sub_gen
+  conv =>
+    rhs
+    rw [prf]
+  rw [←nat.mul_add]
+  match c with
+  | .zero => rfl
+  | .inc c₀ =>
+    rw [nat.mul_irr]
+    rw [nat.sub_add_inv]
+    apply nat.zero_lt_inc
+  have := @nat.mul_le c a₀.inc b c_le_a
+  rw [nat.mul_comm _ a₀.inc, nat.mul_comm _ c] at this
+  assumption
 
 
 theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :

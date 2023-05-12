@@ -203,11 +203,12 @@ theorem nat.add_le_cmp (m: nat.add a b = nat.add c d) : c ≤ a -> b <= d := by
   rw [nat.le_inc_irr] at c_le_a
   apply nat.add_le_cmp <;> assumption
 
-theorem nat.mul_le_cmp (m: nat.mul a b <= nat.mul c d) : nat.zero < a -> nat.zero < b -> c ≤ a -> b <= d := by
-  intro a_ne_zero b_ne_zero c_le_a
+theorem nat.mul_le_cmp (m: nat.mul a b <= nat.mul c d) : nat.zero < a -> c ≤ a -> b <= d := by
+  intro a_ne_zero c_le_a
   match h₄:a with
   | .inc a₀ =>
   match h₂:b with
+  | .zero => apply nat.zero_le
   | .inc b₀ =>
   clear a_ne_zero 
   match h₀:c with
@@ -236,7 +237,6 @@ theorem nat.mul_le_cmp (m: nat.mul a b <= nat.mul c d) : nat.zero < a -> nat.zer
   have := (mul a₁.inc b).a_le_a_plus_b b
   rw [nat.add_comm] at this
   have := nat.le_trans this m
-  rw [←h₂] at b_ne_zero
   rw [←h₃, ←h₀] at c_le_a
   match c_le_a with
   | .inr c_eq_a =>
@@ -250,7 +250,7 @@ theorem nat.mul_le_cmp (m: nat.mul a b <= nat.mul c d) : nat.zero < a -> nat.zer
     rw [nat.mul_le_irr (nat.zero_lt_inc _)] at m
     assumption
   | .inl c_lt_a =>
-  apply @nat.mul_le_cmp a₁.inc b c d this (nat.zero_lt_inc _) b_ne_zero
+  apply @nat.mul_le_cmp a₁.inc b c d this (nat.zero_lt_inc _)
   rw [←nat.lt_inc_to_le]
   apply Compare.ord_implies_lt
   rw [h₃] at c_lt_a
