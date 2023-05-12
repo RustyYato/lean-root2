@@ -1,12 +1,12 @@
 import Root2.Nat.Add
 import Root2.Nat.Cmp
 
-theorem nat.a_less_a_plus_b (a b: nat) : a <= add a b := by
+theorem nat.a_le_a_plus_b (a b: nat) : a <= add a b := by
   match a with
   | nat.zero => apply nat.zero_le
   | nat.inc a₀ =>
     rw [nat.add_inc_r, nat.le_inc_irr]
-    apply nat.a_less_a_plus_b
+    apply nat.a_le_a_plus_b
 
 theorem nat.a_lt_a_plus_b (a b: nat) : a < add a (inc b) := by
   match a with
@@ -34,7 +34,7 @@ theorem nat.le_add_irr2 (a b c d: nat) (a_le_c: a <= c) (b_le_d: b <= d) : (add 
     match a with
     | .zero =>
       rw [nat.add_zero]
-      have d_le_add := d.a_less_a_plus_b c₀.inc
+      have d_le_add := d.a_le_a_plus_b c₀.inc
       rw [nat.add_comm]
       exact nat.le_trans b_le_d d_le_add
     | .inc a₀ =>

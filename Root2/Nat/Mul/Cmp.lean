@@ -7,7 +7,7 @@ theorem nat.a_le_a_mul_b (a b: nat) (b_nz : nat.zero < b) : a <= mul a b := by
   | nat.zero => simp; contradiction
   | nat.inc b₀ =>
     rw [nat.mul_inc_r]
-    apply nat.a_less_a_plus_b
+    apply nat.a_le_a_plus_b
 
 theorem nat.mul_imp_le {{a b c: nat}} (a_nz: nat.zero < a) : mul a b <= c -> b <= c := by
   match a with
@@ -185,7 +185,7 @@ theorem nat.add_le_cmp (m: nat.add a b = nat.add c d) : c ≤ a -> b <= d := by
     rw [nat.add_zero] at m
     rw  [←m]
     rw [nat.add_comm]
-    exact nat.a_less_a_plus_b b₀.inc a₀.inc
+    exact nat.a_le_a_plus_b b₀.inc a₀.inc
   | .inc c₀ =>
   match d with
   | .zero =>
@@ -233,7 +233,7 @@ theorem nat.mul_le_cmp (m: nat.mul a b <= nat.mul c d) : nat.zero < a -> nat.zer
     rw [nat.mul_one] at m
     assumption
   | nat.inc a₁ =>
-  have := (mul a₁.inc b).a_less_a_plus_b b
+  have := (mul a₁.inc b).a_le_a_plus_b b
   rw [nat.add_comm] at this
   have := nat.le_trans this m
   rw [←h₂] at b_ne_zero

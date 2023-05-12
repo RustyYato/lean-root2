@@ -60,7 +60,7 @@ theorem divisible.sub_mul {{a b c: nat}} (b_le_a: b.mul c <= a) (d: divisible (a
     rw [nat.sub_add_to_sub_sub_right] at d
     apply (@divisible.sub (a.checked_sub (b.mul c₀)  _) b _ d).sub_mul
     rw [nat.mul_inc_r] at b_le_a
-    have := (b.mul c₀).a_less_a_plus_b b
+    have := (b.mul c₀).a_le_a_plus_b b
     rw [nat.add_comm] at this
     exact nat.le_trans this b_le_a
     apply nat.add_to_sub_le
