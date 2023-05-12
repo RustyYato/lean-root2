@@ -14,6 +14,49 @@ theorem nat.mul_zero_r (a: nat) : mul a zero = zero := by
     | nat.zero => trivial
     | nat.inc a₀ => simp; apply nat.mul_zero_r
 
+theorem nat.mul_zero_imp (a b: nat) : a = nat.zero ∨ b = nat.zero -> mul a b = zero := by
+  intro a_or_b_is_zero
+  match a_or_b_is_zero with
+  | .inl a_is_zero => rw [a_is_zero, mul_zero]
+  | .inr b_is_zero => rw [b_is_zero, mul_zero_r]
+
+theorem nat.mul_eq_zero (a b: nat) : mul a b = zero -> a = nat.zero ∨ b = nat.zero := by
+  intro a_or_b_is_zero
+  match a, b with
+  | .zero, _ => exact Or.inl rfl
+  | _, .zero => exact Or.inr rfl
+  | .inc a₀, .inc b₀ => simp at a_or_b_is_zero
+
+theorem nat.mul_eq_one (a b: nat) : mul a b = zero.inc -> a = nat.zero.inc ∧ b = nat.zero.inc := by
+  intro ab_one
+  match a, b with
+  | .zero, _ => simp at ab_one
+  | _, .zero => rw [nat.mul_zero_r] at ab_one;  contradiction
+  | .inc .zero, .inc .zero => trivial
+  | .inc (.inc a₀), .inc b₀ =>
+    simp at ab_one
+    rw [nat.add_inc] at ab_one
+    contradiction
+  | .inc a₀, .inc (.inc b₀) =>
+    simp at ab_one
+  
+theorem nat.mul_gt_one {{ a b: nat }} : nat.inc nat.zero < nat.mul a b -> nat.zero.inc < a ∨ nat.zero.inc < b := by
+  match a, b with
+  | .zero, _ => simp
+  | _, .zero => rw [nat.mul_zero_r]; simp
+  | inc .zero, .inc .zero => simp
+  | _, .inc (.inc b₀) =>
+    intro
+    apply Or.inr
+    rw [nat.lt_inc_irr]
+    exact nat.zero_lt_inc _
+  | .inc (.inc a₀), _ =>
+    intro
+    apply Or.inl
+    rw [nat.lt_inc_irr]
+    exact nat.zero_lt_inc _
+
+
 theorem nat.mul_one (a: nat) : mul (inc zero) a = a := by
   unfold mul
   rw [nat.mul_zero a, nat.add_comm, nat.add_zero]

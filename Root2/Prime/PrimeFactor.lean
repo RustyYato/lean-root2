@@ -11,7 +11,7 @@ def list_product (list: List nat) : nat := match list with
   | n :: ns => nat.mul n (list_product ns)
 
 @[simp]
-def List.allP (list: List a) (P : a -> Prop) : Prop := match list with
+def List.allP  (list: List a) (P : a -> Prop) : Prop := match list with
   | [] => True
   | x :: xs => P x ∧ allP xs P
 
@@ -19,6 +19,49 @@ def List.allP (list: List a) (P : a -> Prop) : Prop := match list with
 def List.anyP (list: List a) (P : a -> Prop) : Prop := match list with
   | [] => False
   | x :: xs => P x ∨ anyP xs P
+
+@[simp]
+def List.mapAllP {{list: List a}} {{ P R: a -> Prop }} (all: list.allP P) (F: ∀a, P a -> R a) : list.allP R := by
+  match list with
+  | [] => trivial
+  | x :: xs =>
+    simp
+    apply And.intro
+    exact F x all.left
+    exact List.mapAllP all.right F
+
+@[simp]
+def List.mapAnyP {{list: List a}} {{ P R: a -> Prop }} (any: list.anyP P) (F: ∀a, P a -> R a) : list.anyP R := by
+  match list with
+  | [] => trivial
+  | x :: xs =>
+    simp
+    match any with
+    | .inl prf => exact .inl (F x prf)
+    | .inr prf => exact .inr (List.mapAnyP prf F)
+
+@[simp]
+def List.any_and_not_all {{list: List a}} {{ P: a -> Prop }} (not_all: list.allP fun x => ¬ P x) (any: list.anyP P) : False := by
+  match list with
+  | [] => trivial
+  | x :: xs =>
+    simp
+    match any with
+    | .inl prf => 
+      have not_p := not_all.left
+      contradiction
+    | .inr prf => 
+      apply any_and_not_all not_all.right prf
+
+@[simp]
+def List.all_and_not_all {{list: List a}} {{ P: a -> Prop }} (not_all: list.allP fun x => ¬ P x) (all: list.allP P) : list = [] := by
+  match list with
+  | [] => rfl
+  | x :: xs =>
+    simp
+    have not_p := not_all.left
+    have p := all.left
+    contradiction
 
 @[simp]
 def List.sorted_by (list: List a) (P : a -> a -> Prop) : Prop := match list with
@@ -495,3 +538,122 @@ def nat.factorize (n: nat) (_: nat.zero < n) : PrimeFactorization n := by
     rw [←h] 
     assumption
   }
+
+theorem list_product_eq_zero : list_product as = nat.zero -> as.anyP (λ a => a = nat.zero) := by
+  intro prod
+  match as with
+  | [] => simp at prod
+  | a::as' =>
+    simp at prod
+    match nat.mul_eq_zero _ _ prod with
+    | .inl prf =>
+      exact Or.inl prf
+    | .inr prf =>
+      apply Or.inr
+      apply list_product_eq_zero prf
+
+theorem list_product_eq_one : list_product as = nat.zero.inc -> as.allP (λ a => a = nat.zero.inc) := by
+  intro prod
+  match as with
+  | [] => simp
+  | a::as' =>
+    simp
+    simp at prod
+    have ⟨ q, r ⟩ := nat.mul_eq_one _ _ prod
+    apply And.intro
+    exact q
+    apply list_product_eq_one
+    exact r
+
+theorem primes_gt_one {{a:nat}}{{as: List nat}} (all_primes: (a::as).allP nat.prime) : nat.zero.inc < list_product (a::as) := by
+  match h:(list_product (a::as)) with
+  | .zero =>
+    have some_zero := list_product_eq_zero h
+    have not_zero := List.mapAllP all_primes (by
+      intro x xprime
+      match Compare.dec_eq x nat.zero with
+      | .isTrue x_one => rw [x_one] at xprime; contradiction
+      | .isFalse not_one => exact not_one)
+    have := List.any_and_not_all not_zero some_zero
+    contradiction
+  | .inc .zero => 
+    have all_ones := list_product_eq_one h
+    have no_ones := List.mapAllP all_primes (by
+      intro x xprime
+      match Compare.dec_eq x nat.zero.inc with
+      | .isTrue x_one => rw [x_one] at xprime; contradiction
+      | .isFalse not_one => exact not_one)
+    have := List.all_and_not_all no_ones all_ones
+    contradiction
+  | .inc (.inc x₀) =>
+    rw [nat.lt_inc_irr]
+    exact nat.zero_lt_inc _
+
+theorem sorted_def [Compare α] {{ a: α }} (as_sorted: (a :: as).sorted) : as.allP (fun x => x <= a) := by
+  match as with
+  | [] => trivial
+  | a'::as' =>
+    apply And.intro
+    exact as_sorted.left
+    have := sorted_def as_sorted.right
+    exact List.mapAllP this (by
+      intro x x_le_a'
+      exact Compare.le_trans x_le_a' as_sorted.left)
+
+theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
+  match a with
+  | .PrimeFactors afactors aprimes asorted adef =>
+  match b with
+  | .PrimeFactors bfactors bprimes bsorted bdef =>
+  simp
+  match afactors, bfactors with
+  | [], [] => rfl
+  | [], b::bs =>
+    have bprime := bprimes.left
+    have := primes_gt_one bprimes
+    simp at adef
+    rw [adef] at bdef
+    rw [bdef] at this
+    have := nat.not_lt_id this
+    contradiction
+  | a::as, [] =>
+      have := primes_gt_one aprimes
+      simp at bdef
+      rw [bdef] at adef
+      rw [adef] at this
+      have := nat.not_lt_id this
+      contradiction
+  | a::as, b::bs =>
+    simp
+    have a_eq_b : a = b := by
+      have asorted_def := sorted_def asorted
+      have bsorted_def := sorted_def bsorted
+      have aprime := aprimes.left
+      have bprime := bprimes.left
+
+
+
+      
+      admit
+    apply And.intro
+    exact a_eq_b
+    simp at adef
+    have := PrimeFactorization.unique (
+      .PrimeFactors as aprimes.right (pop_sorted asorted) (by rfl)
+    ) (
+      .PrimeFactors bs bprimes.right (pop_sorted bsorted) (by 
+        rw [adef] at bdef
+        simp at bdef
+        rw [a_eq_b] at bdef
+        rw [nat.mul_irr] at bdef
+        assumption
+        match b with
+        | .zero => 
+          have := bprimes.left
+          contradiction
+        | .inc b₀ =>
+          apply nat.zero_lt_inc
+      )
+    )
+    simp at this
+    exact this

@@ -280,3 +280,9 @@ instance nat.not_composite_implies_prime {{n:nat}} (p: ¬ nat.composite n) : nat
   match n.classify_prime with
   | .Prime prime _ => exact prime
   | .Composite _ composite => contradiction
+
+theorem nat.prime_gt_one (p: nat.prime n) : nat.zero.inc < n := by
+  match n with
+  | .zero => contradiction
+  | .inc .zero => contradiction
+  | .inc (.inc n') => trivial
