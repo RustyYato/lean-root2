@@ -29,13 +29,6 @@ theorem divisible.add_r {{a b: nat}} (d: divisible a b) : divisible (nat.add a b
   rw [prf]
   rw [nat.mul_inc_r, nat.add_comm]
 
-theorem divisible.add_split {{a b c: nat}} (divis_ac: divisible (a.add c) b) (divis_c: divisible c b) : divisible a b := by
-  have ⟨ q, add_ac_eq_bq ⟩ := divis_ac
-  have ⟨ f, c_eq_bf ⟩ := divis_c
-  rw [c_eq_bf] at add_ac_eq_bq
-  have := Eq.symm (nat.add_to_sub add_ac_eq_bq)
-  admit
-
 theorem divisible.sub {{a b: nat}} (b_le_a: b <= a) (d: divisible (a.checked_sub b b_le_a) b) : divisible a b := by
   have d_add := d.add_r
   rw [nat.sub_add_inv b_le_a] at d_add
@@ -67,7 +60,7 @@ theorem divisible.sub_mul {{a b c: nat}} (b_le_a: b.mul c <= a) (d: divisible (a
     rw [←nat.mul_inc_r]
     assumption
 
-theorem divisible.mul_sub {{ a b c: nat }} (d: divisible (nat.mul a b) c) : ∀ h, divisible (nat.mul (a.checked_sub c h) b) c := by
+theorem divisible.mul_sub_left {{ a b c: nat }} (d: divisible (nat.mul a b) c) : ∀ h, divisible (nat.mul (a.checked_sub c h) b) c := by
   intro c_le_a
 
   match a with
@@ -101,31 +94,67 @@ theorem divisible.mul_sub {{ a b c: nat }} (d: divisible (nat.mul a b) c) : ∀ 
   rw [nat.mul_comm _ a₀.inc, nat.mul_comm _ c] at this
   assumption
 
+theorem divisible.mul_sub_right {{ a b c: nat }} (d: divisible (nat.mul a b) c) : ∀ h, divisible (nat.mul a (b.checked_sub c h)) c := by
+  intro c_le_b 
+  rw [nat.mul_comm]
+  rw [nat.mul_comm] at d
+  apply divisible.mul_sub_left
+  assumption
 
 theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :
   divisible (nat.mul a b) c -> divisible a c ∨ divisible b c := by
   intro divis_ab_c
-  match b with
-  | .zero =>
-    apply Or.inr
-    apply divisible.zero
-  | .inc b₀ => 
-  match h:Compare.ord a c with
+  match h₀:Compare.ord a c with
   | .Eq =>
-    have a_eq_c := Compare.ord_implies_eq h
+    have a_eq_c := Compare.ord_implies_eq h₀
     rw [a_eq_c]
     apply Or.inl
     exact divisible.id _
-  | .Less =>
-    admit
   | .Greater =>
     have c_lt_a : c < a := by 
-      rw [Compare.ord_flip] at h
-      exact h
-    clear h
-
-
+      rw [Compare.ord_flip] at h₀
+      exact h₀
+    have := divisible.mul_sub_left divis_ab_c (Or.inl c_lt_a) 
+    match this.prime cprime with
+    | .inl x =>
+      have ⟨ x, prf ⟩ := x
+      have := nat.sub_to_add _ prf
+      apply Or.inl
+      exists x.inc
+      rw [nat.mul_inc_r, nat.add_comm, this]
+    | .inr x =>
+      exact Or.inr x
+  | .Less =>
+  match h₁:Compare.ord b c with
+  | .Eq =>
+    apply Or.inr
+    have b_eq_c := Compare.ord_implies_eq h₁
+    rw [b_eq_c]
+    exact divisible.id _
+  | .Greater =>
+    have c_lt_b : c < b := by 
+      rw [Compare.ord_flip] at h₁
+      exact h₁
+    clear h₁
+    have := divisible.mul_sub_right divis_ab_c (Or.inl c_lt_b)
+    match this.prime cprime with
+    | .inl x =>
+      exact Or.inl x
+    | .inr x =>
+      have ⟨ x, prf ⟩ := x
+      have := nat.sub_to_add _ prf
+      apply Or.inr
+      exists x.inc
+      rw [nat.mul_inc_r, nat.add_comm, this]
+  | .Less =>
+  apply False.elim
+  
+  admit
+  termination_by divisible.prime => a.add b
+  decreasing_by {
+    simp_wf
     admit
+  }
 
 -- theorem divisible.project_base (nd: ¬divisible a c) (cprime: c.prime): nat.mul a b = nat.mul c d -> divisible b c := by
 --   intro mul

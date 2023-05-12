@@ -32,7 +32,7 @@ theorem nat.checked_sub_dec : ∀ a b: nat, nat.zero < b -> (h: b <= a) -> a.che
         have a_lt_inc_a := nat.a_lt_inc_a a₀
         exact (nat.lt_trans checked_sub_ind a_lt_inc_a)
 
-theorem nat.checked_sub_less_eq : ∀ {{a b: nat}}, (h: b <= a) -> a.checked_sub b h <= a := by
+theorem nat.checked_sub_le : ∀ {{a b: nat}}, (h: b <= a) -> a.checked_sub b h <= a := by
   intro a b b_le_a
   match a with
     | nat.zero => match b with
@@ -42,9 +42,25 @@ theorem nat.checked_sub_less_eq : ∀ {{a b: nat}}, (h: b <= a) -> a.checked_sub
       | nat.inc b₀ =>
         simp
         rw [nat.le_inc_irr] at b_le_a
-        have x := nat.checked_sub_less_eq b_le_a
+        have x := nat.checked_sub_le b_le_a
         have y := nat.a_le_inc_a a₀
         exact (nat.le_trans x y)
+
+theorem nat.checked_sub_lt : ∀ {{a b: nat}}, (h: b <= a) -> (nat.zero < b) -> a.checked_sub b h < a := by
+  intro a b b_le_a b_nz
+  match a with
+    | .zero => match b with
+      | .zero => contradiction
+    | .inc a₀ => match b with
+      | .inc .zero =>
+        simp
+        apply nat.a_lt_inc_a
+      | .inc (.inc b₀) =>
+        simp
+        rw [nat.le_inc_irr] at b_le_a
+        have x := nat.checked_sub_lt b_le_a b_nz
+        have y := nat.a_lt_inc_a a₀
+        exact (nat.lt_trans x y)
 
 theorem nat.eq_sub {{a b: nat}} (h: b = a) : checked_sub a b (nat.eq_to_le h) = zero := by
   match a with
