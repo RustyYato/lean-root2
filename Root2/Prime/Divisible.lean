@@ -101,6 +101,22 @@ theorem divisible.mul_sub_right {{ a b c: nat }} (d: divisible (nat.mul a b) c) 
   apply divisible.mul_sub_left
   assumption
 
+theorem divisible.prime_ge {{ a b c: nat }} (cprime: c.prime) :
+  divisible (nat.mul a b) c  -> nat.zero < nat.mul a b -> c <= a ∨ c <= b := by
+  intro divis_ab_c ab_gt_zero
+  have := divis_ab_c.is_le ab_gt_zero
+  have ⟨ x, prf ⟩ := divis_ab_c
+
+  admit
+
+theorem divisible.prime2 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
+  divisible (nat.mul a b) c -> a ≠ c -> divisible b c := by
+  intro divis_ab_c not_divis_a_c
+  have ⟨ x, prf ⟩ := divis_ab_c
+
+  admit
+
+
 theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :
   divisible (nat.mul a b) c -> divisible a c ∨ divisible b c := by
   intro divis_ab_c
@@ -148,7 +164,8 @@ theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :
       rw [nat.mul_inc_r, nat.add_comm, this]
   | .Less =>
   apply False.elim
-  
+  have ⟨ x, prf ⟩ := divis_ab_c
+
   admit
   termination_by divisible.prime => a.add b
   decreasing_by {

@@ -596,6 +596,7 @@ theorem sorted_def [Compare α] {{ a: α }} (as_sorted: (a :: as).sorted) : as.a
       intro x x_le_a'
       exact Compare.le_trans x_le_a' as_sorted.left)
 
+@[simp]
 def contains (as: List α) (a: α) : Prop := match as with
   | [] => False
   | x :: xs => a = x ∨ contains xs a
@@ -631,7 +632,46 @@ theorem all_factors_divisible (f: PrimeFactorization n) : f.factors.allP (λ x =
     exists (nat.mul f xf)
     rw [nat.mul_perm0, nat.mul_comm x, ← nat.mul_perm0, ←prf]
     exact fdef
-  
+
+theorem PrimeFactorization.of_prime (f: PrimeFactorization n) (nprime: n.prime) : ∀a b c, f = .PrimeFactors [n] a b c := by
+  intro _ _ _
+  match f with
+  | .PrimeFactors nfactors nprimes nsorted ndef =>
+  simp
+  match nfactors with
+  | [] =>
+    simp at ndef
+    have := nat.prime_ne_one nprime
+    contradiction
+  | [n₀] =>
+    simp
+    simp at ndef
+    rw [nat.mul_one_r] at ndef
+    rw [ndef]
+  | a::b::fs =>
+    simp
+    simp at ndef
+    match (nprime a).left with
+    | .inl not_divis_na =>
+      apply not_divis_na
+      exists (nat.mul b (list_product fs))
+    | .inr (.inl _) =>
+      have := nat.prime_ne_one nprimes.left
+      contradiction
+    | .inr (.inr n_eq_a) =>
+    rw [n_eq_a] at ndef
+    conv at ndef => {
+      lhs
+      rw [←nat.mul_one_r a]
+    }
+    rw [nat.mul_irr] at ndef
+    {
+      have ⟨ b_eq_one, _ ⟩:= nat.mul_eq_one _ _ (Eq.symm ndef)
+      have := nat.prime_ne_one nprimes.right.left
+      contradiction
+    }
+    exact nat.prime_gt_zero nprimes.left
+
 theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
   ∀p:nat, p.prime -> divisible n p -> contains f.factors p := by
   match f with
@@ -645,6 +685,18 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
     have p_gt_one := nat.prime_gt_one pprime
     have := Compare.not_lt_and_le _ _ p_gt_one p_le_one
     contradiction
+  | [x] =>
+    simp
+    simp at ndef
+    rw [nat.mul_one_r] at ndef
+    rw [ndef] at pdivis
+    have xprime := nprimes.left
+    match (xprime p).left with
+    | .inl _ => contradiction
+    | .inr (.inl _) =>
+      have := nat.prime_ne_one pprime
+      contradiction
+    | .inr (.inr x_eq_p) => rw [x_eq_p]
   | x::xs =>
     simp
     match Compare.dec_eq x p with
@@ -658,6 +710,12 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
     apply xs_complete p pprime
     clear xs_complete
     rw [ndef] at pdivis
+    
+    conv at pdivis =>  {
+      congr
+      simp
+    }
+      
     match pdivis.prime pprime with
     | .inl _ =>
       have ⟨ xprime_def, _ ⟩  := nprimes.left p
