@@ -7,6 +7,11 @@ instance nat_gt_one {n: nat} : nat.zero.inc < nat.inc (nat.inc n) := by
   apply nat.zero_lt_inc
 
 @[simp]
+def contains (as: List α) (a: α) : Prop := match as with
+  | [] => False
+  | x :: xs => a = x ∨ contains xs a
+
+@[simp]
 def list_product (list: List nat) : nat := match list with
   | [] => nat.zero.inc
   | n :: ns => nat.mul n (list_product ns)
@@ -206,6 +211,9 @@ end
     list_sorted_fst_snd_nonempty => (as, bs)
     list_sorted_snd_fst_nonempty => (as, bs)
 
+theorem concat_sorted_empty_left [Compare α] (a_list: List α) : List.concat_sorted [] a_list = a_list := by
+  cases a_list <;> simp
+
 theorem concat_sorted_empty_right [Compare α] (a_list: List α) : List.concat_sorted a_list [] = a_list := by
   cases a_list <;> simp
 
@@ -323,6 +331,91 @@ by
       assumption
     }
 
+theorem concat_sorted_all [Compare α] {{alist blist: List α}} {{P : α -> Prop}} :
+  (alist.allP P) -> (blist.allP P) ->
+  (alist.concat_sorted blist).allP P := by
+  intro allA allB
+  match alist, blist with
+  | [], _ =>
+    rw [concat_sorted_empty_left]
+    assumption
+  | _, [] =>
+    rw [concat_sorted_empty_right]
+    assumption
+  | a::as, b::bs =>
+  simp
+  cases h:Compare.ord a b <;> simp
+  repeat any_goals apply And.intro
+  exact allB.left
+  apply concat_sorted_all allA allB.right
+  exact allA.left
+  exact allB.left
+  apply concat_sorted_all allA.right allB.right
+  exact allA.left
+  apply concat_sorted_all allA.right allB
+termination_by concat_sorted_all => (alist, blist)
+
+theorem concat_sorted_any [Compare α] {{alist blist: List α}} {{P : α -> Prop}} :
+  (alist.anyP P) ∨ (blist.anyP P) ->
+  (alist.concat_sorted blist).anyP P := by
+  intro anyA_or_anyB
+  match alist, blist with
+  | [], _ =>
+    rw [concat_sorted_empty_left]
+    match anyA_or_anyB with
+    | .inr _ => assumption
+  | _, [] =>
+    rw [concat_sorted_empty_right]
+    match anyA_or_anyB with
+    | .inl _ => assumption
+  | a::as, b::bs =>
+  simp
+  cases h:Compare.ord a b <;> simp
+  repeat any_goals apply And.intro
+  match anyA_or_anyB with
+  | .inl anyA =>
+    apply Or.inr
+    apply concat_sorted_any
+    apply Or.inl
+    assumption
+  | .inr (.inl anyB) =>
+    exact .inl anyB
+  | .inr (.inr anyB) =>
+    apply Or.inr
+    apply concat_sorted_any
+    apply Or.inr
+    assumption
+  match anyA_or_anyB with
+  | .inl (.inl anyA) =>
+    exact .inl anyA
+  | .inl (.inr anyA) =>
+    apply Or.inr
+    apply Or.inr
+    apply concat_sorted_any
+    apply Or.inl
+    assumption
+  | .inr (.inl anyB) =>
+    exact Or.inr (Or.inl anyB)
+  | .inr (.inr anyB) =>
+    apply Or.inr
+    apply Or.inr
+    apply concat_sorted_any
+    apply Or.inr
+    assumption
+  match anyA_or_anyB with
+  | .inr anyB =>
+    apply Or.inr
+    apply concat_sorted_any
+    apply Or.inr
+    assumption
+  | .inl (.inl anyA) =>
+    exact .inl anyA
+  | .inl (.inr anyA) =>
+    apply Or.inr
+    apply concat_sorted_any
+    apply Or.inl
+    assumption
+termination_by concat_sorted_any => (alist, blist)
 
 
 inductive PrimeFactorization (n: nat) : Type :=
@@ -595,11 +688,6 @@ theorem sorted_def [Compare α] {{ a: α }} (as_sorted: (a :: as).sorted) : as.a
     exact List.mapAllP this (by
       intro x x_le_a'
       exact Compare.le_trans x_le_a' as_sorted.left)
-
-@[simp]
-def contains (as: List α) (a: α) : Prop := match as with
-  | [] => False
-  | x :: xs => a = x ∨ contains xs a
 
 def apply_all {{as: List α}} (all: List.allP as P) (a: α) (c: contains as a) : P a := by
   match as with
