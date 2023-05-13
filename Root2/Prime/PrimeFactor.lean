@@ -778,6 +778,20 @@ theorem not_contains_pop : ¬ contains (x :: xs) y -> ¬ contains xs y := by
   apply Or.inr
   assumption
 
+theorem not_contains_pop2 : ¬ contains (x :: xs) y -> x ≠ y ∧ ¬contains xs y := by 
+  intro not_contains_xxs_y
+  apply And.intro
+  {
+    intro x_eq_y
+    have : contains (x :: xs) x := by simp
+    rw [←x_eq_y] at not_contains_xxs_y
+    contradiction
+  }
+  intro contains_xs_y
+  apply not_contains_xxs_y
+  apply Or.inr
+  assumption
+
 theorem force_contains [Compare α] {{alist blist: List α}} (anot: ¬ contains alist x)  (bnot: ¬ contains blist x) : ¬ contains (alist.concat_sorted blist) x := by
   match alist, blist with
   | [], _ =>
@@ -821,6 +835,42 @@ theorem force_contains [Compare α] {{alist blist: List α}} (anot: ¬ contains 
     }
   termination_by force_contains => (alist, blist)
 
+theorem PrimeFactorization.is_complete_inv2 (f: PrimeFactorization n) :
+  ∀p:nat, p.prime -> ¬contains f.factors p -> ¬divisible n p := by
+  intro p pprime not_contains divis_np
+  match f with
+  | .PrimeFactors nfactors nprimes nsorted ndef =>
+  simp at not_contains
+  match nfactors with 
+  | [] => 
+    simp at ndef
+    rw [ndef] at divis_np
+    have := one_not_divis_prime p pprime
+    contradiction
+  | x::xs =>
+  simp at ndef
+  rw [ndef] at divis_np
+  have ⟨ x_ne_p, not_contains_xs_p ⟩ := not_contains_pop2 not_contains
+  clear not_contains
+  generalize h:(PrimeFactorization.PrimeFactors xs nprimes.right (pop_sorted nsorted) rfl) = xs_factorization
+  have not_divis_xs_p := xs_factorization.is_complete_inv2 p pprime (by 
+    rw [←h]
+    simp
+    assumption
+  )
+  clear h xs_factorization
+  have not_divis_x_p : ¬ divisible x p := by
+    have ⟨ cond, _ ⟩ := nprimes.left p
+    match cond with
+    | .inl _ => assumption
+    | .inr (.inl _) =>
+      have := nat.prime_ne_one pprime
+      contradiction
+    | .inr (.inr _) => contradiction
+  clear x_ne_p nsorted f
+   
+  admit
+
 theorem divisible.prime3 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
   divisible (nat.mul a b) c -> a ≠ c -> divisible b c := by
   intro divis_ab_c not_divis_a_c
@@ -856,7 +906,6 @@ theorem divisible.prime3 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
 
   have abcont := force_contains acont bcont
   simp at abcont
-
 
 
   

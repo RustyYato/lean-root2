@@ -119,7 +119,7 @@ theorem divisible.prime2 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
   have ⟨ x, prf ⟩ := divis_ab_c
   apply False.elim
   apply not_divis_a_c
-  
+
 
   
   admit
@@ -171,9 +171,23 @@ theorem divisible.prime {{ a b c: nat }} (cprime: c.prime) :
       exists x.inc
       rw [nat.mul_inc_r, nat.add_comm, this]
   | .Less =>
-  apply False.elim
   have ⟨ x, prf ⟩ := divis_ab_c
-
+  match a with
+  | .zero =>
+    apply Or.inl
+    apply divisible.zero
+  | .inc a₀ => 
+  match b with
+  | .zero =>
+    apply Or.inr
+    apply divisible.zero
+  | .inc b₀ => 
+  apply False.elim
+  rw [nat.mul_inc_r] at prf
+  simp at prf
+  clear divis_ab_c
+  -- a * b ≠ c * x (c prime, 0 < a < c, 0 < b < c)
+  
   admit
   termination_by divisible.prime => a.add b
   decreasing_by {
