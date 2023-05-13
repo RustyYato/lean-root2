@@ -417,6 +417,12 @@ theorem concat_sorted_any [Compare α] {{alist blist: List α}} {{P : α -> Prop
     assumption
 termination_by concat_sorted_any => (alist, blist)
 
+theorem one_not_divis_prime : ∀ p, p.prime -> ¬ divisible nat.zero.inc p := by
+  intro p pprime divis_one_p
+  have ⟨ x, prf ⟩ := divis_one_p
+  have ⟨ p_eq_one, _ ⟩  := nat.mul_eq_one _ _ (Eq.symm prf)
+  have pe_ne_one := nat.prime_ne_one pprime
+  contradiction
 
 inductive PrimeFactorization (n: nat) : Type :=
   | PrimeFactors : (factors: List nat)
@@ -721,8 +727,7 @@ theorem all_factors_divisible (f: PrimeFactorization n) : f.factors.allP (λ x =
     rw [nat.mul_perm0, nat.mul_comm x, ← nat.mul_perm0, ←prf]
     exact fdef
 
-theorem PrimeFactorization.of_prime (f: PrimeFactorization n) (nprime: n.prime) : ∀a b c, f = .PrimeFactors [n] a b c := by
-  intro _ _ _
+theorem PrimeFactorization.of_prime (f: PrimeFactorization n) (nprime: n.prime) : f.factors = [n] := by
   match f with
   | .PrimeFactors nfactors nprimes nsorted ndef =>
   simp
@@ -759,6 +764,104 @@ theorem PrimeFactorization.of_prime (f: PrimeFactorization n) (nprime: n.prime) 
       contradiction
     }
     exact nat.prime_gt_zero nprimes.left
+
+theorem PrimeFactorization.is_complete_inv (f: PrimeFactorization n) :
+  ∀p:nat, ¬divisible n p -> ¬contains f.factors p := by
+    intro p not_divis fcontains
+    have := all_factors_divisible f
+    have _ := apply_all this p fcontains
+    contradiction
+
+theorem not_contains_pop : ¬ contains (x :: xs) y -> ¬ contains xs y := by 
+  intro not_contains_xxs_y contains_xs_y
+  apply not_contains_xxs_y
+  apply Or.inr
+  assumption
+
+theorem force_contains [Compare α] {{alist blist: List α}} (anot: ¬ contains alist x)  (bnot: ¬ contains blist x) : ¬ contains (alist.concat_sorted blist) x := by
+  match alist, blist with
+  | [], _ =>
+    simp
+    assumption
+  | _, [] =>
+    rw [concat_sorted_empty_right]
+    assumption
+  | a::as, b::bs =>
+    simp
+    cases h:Compare.ord a b <;> simp
+    {
+      intro cond
+      match cond with
+      | .inl x_eq_b =>
+        rw [x_eq_b] at bnot
+        apply bnot; simp
+      | .inr cond =>
+        exact force_contains anot (not_contains_pop bnot) cond
+    }
+    {
+      intro cond
+      match cond with
+      | .inl x_eq_a =>
+        rw [x_eq_a] at anot
+        apply anot; simp
+      | .inr (.inl x_eq_b) =>
+        rw [x_eq_b] at bnot
+        apply bnot; simp
+      | .inr (.inr cond) =>
+        exact force_contains (not_contains_pop anot) (not_contains_pop bnot) cond
+    }
+    {
+      intro cond
+      match cond with
+      | .inl x_eq_a =>
+        rw [x_eq_a] at anot
+        apply anot; simp
+      | .inr cond =>
+        exact force_contains (not_contains_pop anot) bnot cond
+    }
+  termination_by force_contains => (alist, blist)
+
+theorem divisible.prime3 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
+  divisible (nat.mul a b) c -> a ≠ c -> divisible b c := by
+  intro divis_ab_c not_divis_a_c
+  match b.is_divisible c with
+  | .isTrue _ => assumption
+  | .isFalse b_not_divis_c =>
+
+  have ⟨ x, prf ⟩ := divis_ab_c
+  apply False.elim
+  
+  match b with
+  | .zero =>
+    have := divisible.zero c
+    contradiction
+  | .inc b₀ =>
+  
+  have afact := a.factorize (nat.prime_gt_zero aprime)
+  have bfact := b₀.inc.factorize (nat.zero_lt_inc _)
+
+  have ab_fact := afact.merge bfact
+  have bcont := bfact.is_complete_inv c b_not_divis_c
+
+  have afact_def := afact.of_prime aprime
+
+  have acont : ¬ contains afact.factors c := by
+    rw [afact_def]
+    intro acont
+    simp at acont
+    rw [acont] at not_divis_a_c
+    contradiction
+
+  clear afact_def
+
+  have abcont := force_contains acont bcont
+  simp at abcont
+
+
+
+  
+  admit
+
 
 theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
   ∀p:nat, p.prime -> divisible n p -> contains f.factors p := by
@@ -799,11 +902,6 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
     clear xs_complete
     rw [ndef] at pdivis
     
-    conv at pdivis =>  {
-      congr
-      simp
-    }
-      
     match pdivis.prime pprime with
     | .inl _ =>
       have ⟨ xprime_def, _ ⟩  := nprimes.left p

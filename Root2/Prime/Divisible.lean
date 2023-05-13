@@ -112,8 +112,16 @@ theorem divisible.prime_ge {{ a b c: nat }} (cprime: c.prime) :
 theorem divisible.prime2 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
   divisible (nat.mul a b) c -> a ≠ c -> divisible b c := by
   intro divis_ab_c not_divis_a_c
-  have ⟨ x, prf ⟩ := divis_ab_c
+  match b.is_divisible c with
+  | .isTrue _ => assumption
+  | .isFalse b_not_divis_c =>
 
+  have ⟨ x, prf ⟩ := divis_ab_c
+  apply False.elim
+  apply not_divis_a_c
+  
+
+  
   admit
 
 

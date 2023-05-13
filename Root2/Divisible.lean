@@ -2,7 +2,6 @@ import Root2.Nat.Mul
 import Root2.Nat.Cmp
 import Root2.Nat.Mul.Cmp
 
-@[simp]
 def divisible (a b: nat) : Prop := ∃ c, a = nat.mul b c
 
 @[simp]
