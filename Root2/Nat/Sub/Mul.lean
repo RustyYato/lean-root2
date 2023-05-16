@@ -30,3 +30,25 @@ theorem nat.mul_sub_right (a b c: nat) : ∀ h₀ h₁, mul (b.checked_sub c h�
   rw [nat.mul_comm a]
   rw [nat.sub_add_inv]
   apply nat.mul_comm
+
+theorem nat.mul_sat_sub_left : nat.mul a (nat.saturating_sub b c) = nat.saturating_sub (nat.mul a b) (nat.mul a c) := by
+  match c with
+  | .zero =>
+    rw [nat.mul_zero_r]
+    simp
+  | .inc c₀ =>
+    simp
+    match b with
+    | .zero =>
+      simp
+      rw [nat.mul_zero_r, nat.sat_sub_zero]
+      apply nat.zero_le
+    | .inc b₀ =>
+    simp
+    rw [nat.mul_inc_r, nat.mul_inc_r, nat.sat_sub_common]
+    apply nat.mul_sat_sub_left
+
+theorem nat.mul_sat_sub_right : nat.mul (nat.saturating_sub b c) a = nat.saturating_sub (nat.mul b a) (nat.mul c a) := by
+  rw [nat.mul_comm]
+  rw [nat.mul_sat_sub_left]
+  rw [nat.mul_comm a, nat.mul_comm a]

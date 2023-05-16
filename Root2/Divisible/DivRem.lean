@@ -52,6 +52,21 @@ theorem divrem.divisible_remainder (d: divrem a b) (divis: divisible a b) : d.re
   apply Eq.symm
   repeat assumption
 
+theorem divrem.not_divisible_remainder (d: divrem a b) (divis: ¬divisible a b) : nat.zero < d.remainder := by
+  match h:d.remainder with
+  | .zero =>
+    apply False.elim
+    have divis_def := d.def
+    rw [h] at divis_def
+    simp at divis_def
+    apply divis
+    exists d.quocient
+    apply Eq.symm
+    rw [nat.mul_comm]
+    assumption
+  | .inc r =>
+    apply nat.zero_lt_inc
+
 
 @[simp]
 def nat.is_divisible (a b: nat) : Decidable (divisible a b) := by
@@ -121,3 +136,45 @@ def divisible.quocient (divis: divisible a b) (a_gt_zero : nat.zero < a) : Quoci
     rw [nat.mul_comm] at n_le_mul
     exact (nat.comp_dec (nat.a_lt_inc_a _) (nat.le_trans a_le_n n_le_mul))
   )
+
+theorem divisible.remainder_zero : a < b -> nat.add a (nat.mul b c) = nat.mul b d -> a = nat.zero := by
+  intro a_lt_b mul
+  have b_gt_zero := nat.gt_implies_gt_zero a_lt_b
+  have bd_divrem := divrem.calc (nat.mul b d) b b_gt_zero
+  have abc_divrem := divrem.calc (nat.add a (nat.mul b c)) b b_gt_zero
+  have bd_rem := bd_divrem.divisible_remainder (by exists d)
+  have ⟨ abd_rem_eq_bd_rem, _ ⟩  := abc_divrem.eq bd_divrem mul
+  rw [←abd_rem_eq_bd_rem] at bd_rem
+  have ⟨ abc_divrem_rem, _ ⟩ := abc_divrem.from_def a_lt_b
+  rw [←abc_divrem_rem]
+  assumption
+
+theorem divisible.divdef (n_divis: divisible (nat.add (nat.mul a b) c) b): divisible c b := by
+  match c.is_divisible b with
+  | .isTrue _ => assumption
+  | .isFalse c_not_divis =>
+    match b with
+    | .zero =>
+      rw [nat.mul_zero_r, nat.add_zero] at n_divis
+      contradiction
+    | .inc b₀ =>
+    apply False.elim
+    have d := divrem.calc c b₀.inc (nat.zero_lt_inc _)
+    have ⟨ x, prf ⟩ := n_divis
+    rw [←d.def] at prf
+    rw [nat.add_perm1, nat.add_comm] at prf
+    conv at prf => {
+      lhs
+      rhs
+      rw [nat.mul_comm]
+      rhs
+      rw [nat.mul_comm]
+    }
+    rw [←nat.mul_add] at prf
+    generalize nat.add a d.quocient = ingore at prf
+    have rem_gt_zero := divrem.not_divisible_remainder d c_not_divis
+    have drem_lt := d.remainder_lt
+    have := divisible.remainder_zero drem_lt prf
+    rw [this] at rem_gt_zero
+    contradiction
+    

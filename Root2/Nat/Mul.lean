@@ -27,6 +27,14 @@ theorem nat.mul_eq_zero (a b: nat) : mul a b = zero -> a = nat.zero ∨ b = nat.
   | _, .zero => exact Or.inr rfl
   | .inc a₀, .inc b₀ => simp at a_or_b_is_zero
 
+theorem nat.mul_ne_zero (a b: nat) : nat.zero < mul a b -> nat.zero < a ∧ nat.zero < b := by
+  intro mul_ab_ne_zero
+  match a, b with
+  | .zero, _ => simp at mul_ab_ne_zero
+  | _, .zero => rw [nat.mul_zero_r] at mul_ab_ne_zero; contradiction
+  | .inc a₀, .inc b₀ => 
+    apply And.intro <;> apply nat.zero_lt_inc
+
 theorem nat.mul_eq_one (a b: nat) : mul a b = zero.inc -> a = nat.zero.inc ∧ b = nat.zero.inc := by
   intro ab_one
   match a, b with

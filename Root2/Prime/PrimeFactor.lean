@@ -868,7 +868,105 @@ theorem PrimeFactorization.is_complete_inv2 (f: PrimeFactorization n) :
       contradiction
     | .inr (.inr _) => contradiction
   clear x_ne_p nsorted f
-   
+  admit
+
+theorem nat.distribute_terms :
+  nat.mul (nat.add c (nat.mul b a)) (nat.add e (nat.mul d a)) =
+  nat.add
+  (nat.mul (nat.add (nat.mul b (nat.mul a d))
+                    (nat.add (nat.mul d c) (nat.mul b e)))
+           a)
+  (nat.mul c e) := by
+  conv => {
+    lhs
+    rw [nat.mul_add]
+    rw [nat.add_mul]
+    rw [nat.add_mul]
+  }
+  conv => {
+    rhs
+    rw [nat.add_mul]
+    rw [nat.add_mul]
+    rw [nat.add_comm]
+  }
+  rw [←nat.add_perm0]
+  rw [nat.add_irr]
+  conv => {
+    rhs
+    rw [nat.add_perm9]
+    conv => {
+      rhs 
+      rw [nat.add_comm]
+      lhs
+      rw [←nat.mul_perm2]
+    }
+    lhs
+    rw [←nat.mul_perm0,nat.mul_perm1]
+  }
+  rw [nat.add_irr]
+  rw [nat.add_irr]
+  conv => {
+    rhs
+    rw [nat.mul_comm]
+    rw [nat.mul_perm0]
+    rw [nat.mul_comm a]
+    rw [nat.mul_comm a]
+  }
+
+-- x * xs = p * F
+-- (p * x₀ + r₀) * (p * xs₁ + r₁) = p * F
+-- p * x₀ * (p * xs₁ + r₁) + r₀ * (p * xs₁ + r₁) = p * F
+-- p * x₀ * (p * xs₁ + r₁) + r₀ * p * xs₁ + r₀ * r₁ = p * F
+-- r₀ * r₁ = 0 (mod p)
+
+theorem divisible.prime4 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
+  divisible (nat.mul a b) c -> a ≠ c -> divisible b c := by
+  intro divis_ab_c a_ne_c
+  have div_a_c := divrem.calc a c (nat.prime_gt_zero cprime)
+  have div_b_c := divrem.calc b c (nat.prime_gt_zero cprime)
+  have not_divis_a_c : ¬ divisible a c := by 
+    have ⟨ prf, _ ⟩ := aprime c
+    match prf with
+    | .inl _ => assumption
+    | .inr (.inl _) => have := nat.prime_ne_one cprime; contradiction
+    | .inr (.inr _) => contradiction
+  rw [←div_a_c.def, ←div_b_c.def] at divis_ab_c
+  rw [nat.distribute_terms] at divis_ab_c
+  have := divisible.divdef divis_ab_c
+  clear divis_ab_c
+  have ⟨ x, prf ⟩ := this
+  match x with
+  | .zero =>  
+    rw [nat.mul_zero_r] at prf
+    match nat.mul_eq_zero _ _ prf with
+    | .inl rem_a_eq_zero => 
+      have : divisible a c := by
+        exists div_a_c.quocient
+        have := div_a_c.def
+        rw [rem_a_eq_zero, nat.add_zero, nat.mul_comm] at this
+        exact Eq.symm this
+      contradiction
+    | .inr rem_b_eq_zero =>
+      exists div_b_c.quocient
+      have := div_b_c.def
+      rw [rem_b_eq_zero, nat.add_zero, nat.mul_comm] at this
+      exact Eq.symm this
+  | .inc x₀ =>
+  -- a | b + b * c -> a | b ∨ a | (c + 1)
+  have ⟨ div_ac_rem_gt_zero, div_bc_rem_gt_zero ⟩  : nat.zero < div_a_c.remainder ∧ nat.zero < div_b_c.remainder := by
+    rw [nat.mul_inc_r] at prf
+    match c with
+    | .zero =>
+      have := nat.prime_ne_zero cprime
+      contradiction
+    | .inc c₀ =>
+    have := nat.a_le_a_plus_b c₀.inc (nat.mul c₀.inc x₀)
+    have := nat.lt_le_trans (nat.zero_lt_inc c₀) this
+    rw [←prf] at this
+    exact nat.mul_ne_zero _ _ this
+  apply False.elim
+    
+  
   admit
 
 theorem divisible.prime3 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :

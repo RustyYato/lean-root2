@@ -471,3 +471,12 @@ theorem nat.not_le_implies_le_symm {{a b: nat}} : ¬ a <= b -> b <= a := by
 instance {{a b: nat}} : Decidable (a = b) := nat.compare_eq a b
 instance {{a b: nat}} : Decidable (a < b) := nat.compare_lt a b
 instance {{a b: nat}} : Decidable (a <= b) := nat.compare_le a b
+
+theorem nat.gt_implies_gt_zero : a < b -> nat.zero < b := by
+  match a with
+  | .zero => exact id
+  | .inc a₀ =>
+    intro a_lt_b
+    have := nat.lt_trans (nat.a_lt_inc_a a₀) a_lt_b
+    exact nat.gt_implies_gt_zero this
+

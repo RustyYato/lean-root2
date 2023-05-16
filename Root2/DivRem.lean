@@ -18,6 +18,12 @@ def divrem.remainder (n: divrem a b) : nat :=
     | @remain r _ _ => r
     | step n => n.remainder
 
+@[simp]
+def divrem.remainder_lt (n: divrem a b) : n.remainder < b :=
+  match n with
+    | @remain r _ prf => prf
+    | step n => n.remainder_lt
+
 def divrem.calc_imp (a b c: nat) (b_gt_0: nat.zero < b) (c_le_a: c <= a) : divrem (a.checked_sub c c_le_a) b :=
   match c with
   | nat.inc c₀ => by
@@ -77,9 +83,97 @@ theorem divrem.def : ∀ {{a b: nat}} (d: divrem a b), nat.add d.remainder (nat.
         rw [divrem.def d₀]
       }
 
+
+theorem divrem.eq (adivc: divrem a c) (bdivc: divrem b c) (aeqb: a = b) : adivc.remainder = bdivc.remainder ∧ adivc.quocient = bdivc.quocient := by 
+  match adivc, bdivc with
+  | .remain arem, .remain brem =>
+    simp
+    assumption
+  | .step adiv, .step bdiv =>
+    simp
+    apply adiv.eq bdiv
+    rw [nat.add_to_sub]
+    rw [nat.sub_add_inv]
+    apply Eq.symm
+    assumption
+  | .step _, .remain b_lt_c =>
+    simp
+    next c_le_a _ => {
+      match c_le_a with
+      | .inl c_lt_a =>
+        have c_lt_a : c < a := Compare.ord_implies_lt c_lt_a
+        have b_lt_a := nat.lt_trans  b_lt_c c_lt_a
+        rw [aeqb] at b_lt_a
+        have := b.not_lt_id
+        contradiction
+      | .inr c_eq_a =>
+        have c_eq_a : c = a := Compare.ord_implies_eq c_eq_a
+        rw [c_eq_a, aeqb] at b_lt_c
+        have := b.not_lt_id
+        contradiction
+    }
+  | .remain a_lt_c, .step _ =>
+    simp
+    next c_le_b _ => {
+      match c_le_b with
+      | .inl c_lt_b =>
+        have c_lt_b : c < b := Compare.ord_implies_lt c_lt_b
+        have b_lt_a := nat.lt_trans  a_lt_c c_lt_b
+        rw [aeqb] at b_lt_a
+        have := b.not_lt_id
+        contradiction
+      | .inr c_eq_b =>
+        have c_eq_a : c = b := Compare.ord_implies_eq c_eq_b
+        rw [c_eq_a, aeqb] at a_lt_c
+        have := b.not_lt_id
+        contradiction
+    }
+
+theorem divrem.from_def (d: divrem (nat.add a (nat.mul b c)) b) : a < b -> d.remainder = a ∧ d.quocient = c := by
+  intro a_lt_b
+  match d with
+    | divrem.remain x => 
+      simp
+      match c with
+      | .zero =>
+        rw [nat.mul_zero_r, nat.add_zero_r]
+        exact ⟨ rfl, rfl ⟩
+      | .inc c₀ =>
+        simp
+        conv at x => {
+          rw [nat.mul_inc_r]
+          rw [nat.add_perm0, nat.add_comm a, ←nat.add_perm0]
+        }
+        have := nat.a_le_a_plus_b b (nat.add a (nat.mul b c₀))
+        have := @Compare.not_lt_and_le nat _ _ _ x this
+        contradiction
+    | divrem.step d₀ => 
+      match c with
+      | .zero =>
+        simp
+        next b_le_a => {
+          rw [@nat.sub_equality_left_prf (nat.add a (nat.mul b .zero)) a b (by
+            rw [nat.mul_zero_r, nat.add_zero_r]
+            ) b_le_a] at d₀
+          rw [nat.mul_zero_r, nat.add_zero_r] at b_le_a
+          have := nat.comp_dec a_lt_b b_le_a
+          contradiction
+        }
+      | .inc c₀ =>
+        simp
+        next h => {
+          have : nat.checked_sub (nat.add a (nat.mul b (nat.inc c₀))) b h = nat.add a (nat.mul b c₀) :=  by
+            rw [nat.sub_add, nat.mul_inc_r, nat.add_perm7, nat.add_comm]
+          have d₁ := d₀
+          rw [this] at d₁
+          have ⟨ deq_rem, deq_quo ⟩ := d₀.eq d₁ this
+          rw [deq_rem, deq_quo]
+          exact d₁.from_def a_lt_b
+        }
+
 theorem divrem.div_nz (d: divrem a b) : nat.zero < b :=
   match d with
   | divrem.remain q => match a with
      | nat.zero => q
-     | nat.inc _ => nat.lt_trans (nat.zero_lt_inc _) (q)
+     | nat.inc _ => nat.lt_trans (nat.zero_lt_inc _) q
   | divrem.step d => d.div_nz

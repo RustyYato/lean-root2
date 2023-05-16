@@ -11,6 +11,14 @@ def nat.checked_sub (a b: nat) : (b <= a) -> nat :=
     | nat.zero => fun h => (nat.le_inc_zero h).elim
     | nat.inc a₀ => fun h => checked_sub a₀ b₀ (inc_le_to_le h)
 
+@[simp]
+def nat.saturating_sub (a b: nat) : nat := 
+  match b with
+  | nat.zero => a
+  | nat.inc b₀ => match a with
+    | nat.zero => nat.zero
+    | nat.inc a₀ => saturating_sub a₀ b₀
+
 theorem nat.checked_sub_dec : ∀ a b: nat, nat.zero < b -> (h: b <= a) -> a.checked_sub b h < a := by
   intro a b zero_lt_b b_le_a
   have zero_le_b := nat.lt_is_le _ _ zero_lt_b
@@ -160,8 +168,94 @@ theorem nat.sub_add_inv (h: b <= a) : add (checked_sub a b h) b = a := by
       rw [nat.add_inc, nat.eq_inc_irr]
       apply nat.sub_add_inv
 
+theorem nat.sat_sub_zero (a_le_b: a <= b) : saturating_sub a b = nat.zero := by
+  match a with
+  | .zero =>
+    unfold saturating_sub
+    split <;> simp
+  | .inc a₀ =>
+  match b with
+  | .inc b₀ =>
+  simp
+  apply nat.sat_sub_zero
+  assumption
+
+theorem nat.sat_sub_add_inv (h: b <= a) : add (saturating_sub a b) b = a := by
+  match a with
+  | .zero =>
+    unfold saturating_sub
+    have b_eq_zero := nat.le_zero b h
+    rw [b_eq_zero]
+    simp
+  | .inc a₀ =>
+    match b with
+    | .zero =>
+      simp
+      rw [nat.add_zero_r]
+    | .inc b₀ =>
+      simp
+      rw [nat.add_inc, nat.eq_inc_irr]
+      apply nat.sat_sub_add_inv
+      assumption
+
+theorem nat.sat_sub_gt_zero (h: b < a) : nat.zero < saturating_sub a b := by
+  match a with
+  | .zero =>
+    have := nat.not_lt_zero b
+    contradiction
+  | .inc a₀ =>
+    match b with
+    | .zero =>
+      simp
+      assumption
+    | .inc b₀ =>
+      simp
+      apply nat.sat_sub_gt_zero
+      assumption
+
+theorem nat.sat_sub_le : saturating_sub a b <= a := by
+  match a with
+  | .zero => rw [nat.sat_sub_zero (nat.zero_le _)]; apply nat.zero_le
+  | .inc a₀ =>
+    match b with
+    | .zero =>
+      simp
+      exact nat.le_id _
+    | .inc b₀ =>
+      simp
+      have := @nat.sat_sub_le a₀ b₀
+      apply nat.le_trans this
+      apply nat.a_le_inc_a
+
+theorem nat.sat_sub_common : nat.saturating_sub (nat.add a b) (nat.add a c) = nat.saturating_sub b c := by
+  match a with
+  | .zero => simp
+  | .inc a₀ =>
+    simp
+    apply nat.sat_sub_common
+
 theorem nat.sub_equality_left : a = b -> ∀h₀ h₁, checked_sub a c h₀ = checked_sub b c h₁ := by
   intro a_eq_b h₀ h₁
+  match a, b with
+  | .zero, .zero => simp
+  | .inc a₀, .inc b₀ =>
+    rw [eq_inc_irr] at a_eq_b
+    match c with
+    | .zero =>
+      simp
+      assumption
+    | .inc c₀ =>
+      simp
+      apply nat.sub_equality_left
+      assumption
+  | .inc _, .zero | .zero, .inc _ => contradiction
+
+theorem eq_le [Compare α] {{a b c: α}} (a_eq_b: a = b) (c_le_a: c <= a) : c <= b := by
+  rw [←a_eq_b]
+  assumption
+
+theorem nat.sub_equality_left_prf (a_eq_b: a = b) : ∀h₀ : c <= a, checked_sub a c h₀ = checked_sub b c (eq_le a_eq_b h₀) := by
+  intro h₀
   match a, b with
   | .zero, .zero => simp
   | .inc a₀, .inc b₀ =>
