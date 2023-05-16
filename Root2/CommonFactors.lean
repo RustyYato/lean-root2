@@ -217,7 +217,7 @@ def gcd.comm (a b: nat) : gcd a b = gcd b a := by
     assumption
   }
 
-def gcd.correct {{ a b: nat }} (c: nat) :
+def gcd.correct :
   divisible a c ->
   divisible b c ->
   divisible (gcd a b) c := by
@@ -263,6 +263,85 @@ def gcd.correct {{ a b: nat }} (c: nat) :
         rw [prf₀, prf₁]
         exists y.saturating_sub x
         rw [nat.mul_sat_sub_left]
+      }
+      assumption
+  }
+  termination_by _ => nat.add a b
+  decreasing_by {
+    simp_wf
+    apply nat.size_of_lt
+    assumption
+  }
+
+def gcd.correct_rev :
+  divisible (gcd a b) c ->
+  divisible a c ∧ 
+  divisible b c := by
+  intro divis_gcd_c
+  unfold gcd at divis_gcd_c
+  split at divis_gcd_c
+  {
+    apply And.intro
+    assumption
+    have a_eq_b : a = b := by
+      apply ord_imp_eq
+      assumption
+    rw [←a_eq_b]
+    assumption
+  }
+  {
+    match h:a with
+    | .zero =>
+      apply And.intro
+      apply divisible.zero
+      assumption
+    | .inc a₀ =>
+      simp at divis_gcd_c
+      have : nat.inc (nat.add a₀ (nat.saturating_sub b (nat.inc a₀))) < nat.add a b := by
+        rw [←nat.add_inc_r, nat.add_comm, nat.sat_sub_add_inv, nat.add_comm, nat.lt_add_const_irr]
+        rw [h]
+        apply nat.zero_lt_inc
+        apply Or.inl
+        assumption
+      have ⟨ divis_a, divis_sub ⟩ := gcd.correct_rev divis_gcd_c
+      apply And.intro
+      assumption
+      have ⟨ x, prf₀ ⟩ := divis_a
+      have ⟨ y, prf₁ ⟩ := divis_sub
+      exists y.add x
+      rw [nat.mul_add]
+      rw [←prf₀, ←prf₁]
+      rw [nat.sat_sub_add_inv]
+      apply Or.inl
+      assumption
+  }
+  {
+    match h:b with
+    | .zero =>
+      apply And.intro
+      assumption
+      apply divisible.zero
+    | .inc b₀ =>
+      simp at divis_gcd_c
+      have : nat.add (nat.saturating_sub a (nat.inc b₀)) (nat.inc b₀) < nat.add a b := by
+        rw [nat.sat_sub_add_inv, nat.lt_add_const_irr]
+        rw [h]
+        apply nat.zero_lt_inc
+        apply Or.inl
+        rw [Compare.ord_flip]
+        assumption
+      have ⟨ divis_a, divis_sub ⟩ := gcd.correct_rev divis_gcd_c
+      apply And.intro
+      {
+        have ⟨ x, prf₀ ⟩ := divis_a
+        have ⟨ y, prf₁ ⟩ := divis_sub
+        exists y.add x
+        rw [nat.mul_add]
+        rw [←prf₀, ←prf₁]
+        rw [nat.add_comm, nat.sat_sub_add_inv]
+        apply Or.inl
+        rw [Compare.ord_flip]
+        assumption
       }
       assumption
   }
