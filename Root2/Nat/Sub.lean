@@ -180,6 +180,16 @@ theorem nat.sat_sub_zero (a_le_b: a <= b) : saturating_sub a b = nat.zero := by
   apply nat.sat_sub_zero
   assumption
 
+theorem nat.sat_sub_eq_zero (sub_eq_zero: saturating_sub a b = nat.zero) : a <= b := by
+  match a with
+  | .zero => apply nat.zero_le
+  | .inc a₀ =>
+  match b with
+  | .inc b₀ =>
+  rw [nat.le_inc_irr]
+  apply nat.sat_sub_eq_zero
+  assumption
+
 theorem nat.sat_sub_add_inv (h: b <= a) : add (saturating_sub a b) b = a := by
   match a with
   | .zero =>
@@ -233,6 +243,13 @@ theorem nat.sat_sub_common : nat.saturating_sub (nat.add a b) (nat.add a c) = na
   | .inc a₀ =>
     simp
     apply nat.sat_sub_common
+
+theorem nat.sat_sub_id : nat.saturating_sub a a = nat.zero := by
+  match a with
+  | .zero => simp
+  | .inc a₀ =>
+    simp
+    apply nat.sat_sub_id
 
 theorem nat.sub_equality_left : a = b -> ∀h₀ h₁, checked_sub a c h₀ = checked_sub b c h₁ := by
   intro a_eq_b h₀ h₁
