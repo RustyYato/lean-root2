@@ -315,3 +315,43 @@ theorem Gcd.eq_zero (g: Gcd a b) : (g.eval = nat.zero) = (a = nat.zero ∧ b = n
 
 theorem gcd.eq_zero : (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat.zero) := by
   apply Gcd.eq_zero
+
+theorem Gcd.divisible_by_left (g: Gcd a b) (d: divisible a b): g.eval = b := by
+  match g with
+  | .Id _ => simp
+  | .Left _ _ =>
+    simp
+    rw [d.by_zero]
+  | .Right _ _ => simp
+  | .LeftSucc _ _ a_gt_zero _ _ _ =>
+    simp
+    have := (nat.comp_dec · (d.is_le a_gt_zero))
+    contradiction
+  | .RightSucc _ _ _ _ _ g =>
+    simp
+    apply Gcd.divisible_by_left g
+    have ⟨ x, prf ⟩ := d
+    match x with
+    | .zero =>
+      rw [nat.mul_zero_r] at prf
+      rw [prf, nat.sat_sub_zero (nat.zero_le _)]
+      exact divisible.zero _
+    | .inc x₀ =>
+    exists x₀
+    rw [prf, nat.mul_inc_r, nat.sat_sub_add_inv2]
+
+theorem Gcd.divisible_by_right (g: Gcd a b) (d: divisible b a): g.eval = a := by
+  have : Gcd b a := Gcd.calc b a
+  rw [Gcd.comm g this]
+  apply Gcd.divisible_by_left
+  assumption
+
+theorem Gcd.repeat_right (g: Gcd a b) (h: Gcd a g.eval): h.eval = g.eval := by
+  apply Gcd.divisible_by_left h
+  have ⟨ _, _ ⟩ := Gcd.correct_rev g (divisible.id _)
+  assumption
+
+theorem Gcd.repeat_left (g: Gcd a b) (h: Gcd g.eval b): h.eval = g.eval := by
+  apply Gcd.divisible_by_right h
+  have ⟨ _, _ ⟩ := Gcd.correct_rev g (divisible.id _)
+  assumption

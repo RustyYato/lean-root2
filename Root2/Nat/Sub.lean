@@ -168,6 +168,14 @@ theorem nat.sub_add_inv (h: b <= a) : add (checked_sub a b h) b = a := by
       rw [nat.add_inc, nat.eq_inc_irr]
       apply nat.sub_add_inv
 
+theorem nat.sat_sub_add_inv2 : saturating_sub (add a b) a = b := by
+  match a with
+  | .zero =>
+    simp
+  | .inc a₀ =>
+    simp
+    apply nat.sat_sub_add_inv2
+
 theorem nat.sat_sub_zero (a_le_b: a <= b) : saturating_sub a b = nat.zero := by
   match a with
   | .zero =>

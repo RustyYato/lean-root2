@@ -9,6 +9,12 @@ def not_divisible (a b: nat) : Prop := ∀ c, ¬(a = nat.mul b c)
 
 theorem divisible.zero (a: nat) : divisible nat.zero a := ⟨ nat.zero, (Eq.symm (nat.mul_zero_r a)) ⟩
 
+theorem divisible.by_zero (a: nat) : divisible a nat.zero -> a = nat.zero := by
+  intro a_divis_zero
+  have ⟨ _, prf ⟩ := a_divis_zero
+  simp at prf
+  assumption
+
 theorem divisible.one (a: nat) : divisible a (nat.inc nat.zero) := ⟨ a, (Eq.symm (nat.mul_one a)) ⟩
 
 theorem divisible.id (a: nat) : divisible a a := ⟨ nat.inc nat.zero, Eq.symm (nat.mul_one_r a) ⟩
