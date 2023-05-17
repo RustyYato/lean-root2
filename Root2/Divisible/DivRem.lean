@@ -178,3 +178,21 @@ theorem divisible.divdef (n_divis: divisible (nat.add (nat.mul a b) c) b): divis
     rw [this] at rem_gt_zero
     contradiction
     
+theorem divisible.from_ne : a ≠ b -> (∃ x, divisible a x ≠ divisible b x) := by
+  intro a_eq_b
+  match a.is_divisible b with
+  | .isFalse _ =>
+    exists b
+    intro divis_eq_divis
+    have := divis_eq_divis.mpr (divisible.id _)
+    contradiction
+  | .isTrue a_divis_b => 
+  match b.is_divisible a with
+  | .isFalse _ =>
+    exists a
+    intro divis_eq_divis
+    have := divis_eq_divis.mp (divisible.id _)
+    contradiction
+  | .isTrue b_divis_a =>
+  have := divisible.ab_eq_ba_implies_eq a_divis_b b_divis_a
+  contradiction

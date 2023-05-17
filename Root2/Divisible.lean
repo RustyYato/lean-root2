@@ -53,3 +53,32 @@ theorem divisible.not (nd: ¬ divisible a b) : not_divisible a b := by
   intro x a_eq_bx
   apply nd
   exists x
+
+theorem divisible.to_ne : (∃ x, divisible a x ≠ divisible b x) -> a ≠ b := by
+  intro exists_divis_ne a_eq_b
+  rw [a_eq_b] at exists_divis_ne
+  have ⟨ _, prf ⟩ := exists_divis_ne
+  contradiction
+
+
+theorem divisible.ab_eq_ba_implies_eq : divisible a b -> divisible b a -> a = b := by
+  intro divis_ab divis_ba
+  have ⟨ x, prf₀ ⟩ := divis_ab
+  have ⟨ y, prf₁ ⟩ := divis_ba
+  rw [prf₀] at prf₁
+  rw [←nat.mul_perm0] at prf₁
+  have := nat.mul_one_r b
+  conv at prf₁ => {
+    lhs
+    rw [←this]
+  }
+  clear this
+  match b with
+  | .zero =>
+    simp at prf₀
+    assumption
+  | .inc b₀ =>
+    rw [nat.mul_irr (nat.zero_lt_inc _)] at prf₁
+    have ⟨ x_eq_one, y_eq_one ⟩  := nat.mul_eq_one _ _ (Eq.symm prf₁)
+    rw [x_eq_one, nat.mul_one_r] at prf₀
+    assumption
