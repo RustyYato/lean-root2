@@ -272,6 +272,43 @@ theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
   apply Eq.symm
   apply Gcd.assoc
 
+theorem Gcd.left_one (g: Gcd a nat.zero.inc) : g.eval = nat.zero.inc := by
+  match h:g with
+  | .Id _ | .Right _ _ => simp
+  | .Left _ _ => contradiction
+  | .LeftSucc a b _ _ _ _ =>
+    simp
+    next b_eq_one => {
+      match a with
+      | .inc a₀ => 
+      next b_gt_a₀ _ _ => {
+        rw [←b_eq_one] at b_gt_a₀
+        unfold GT.gt at b_gt_a₀
+        rw [nat.lt_inc_irr] at b_gt_a₀
+        have := nat.not_lt_zero a₀
+        contradiction
+      }
+    }
+  | .RightSucc a b _ _ _ g => {
+    simp
+    clear h
+    match b with
+    | .inc .zero =>
+    exact g.left_one
+  }
+
+theorem Gcd.right_one (g: Gcd nat.zero.inc a) : g.eval = nat.zero.inc := by
+  have gcd_a_one := Gcd.calc a nat.zero.inc
+  have := gcd_a_one.left_one
+  rw [Gcd.comm _ gcd_a_one]
+  assumption
+
+theorem gcd.left_one : gcd a nat.zero.inc = nat.zero.inc := by
+  apply Gcd.left_one
+
+theorem gcd.right_one : gcd nat.zero.inc a = nat.zero.inc := by
+  apply Gcd.right_one
+
 theorem Gcd.ne_zero (g: Gcd a b) : (nat.zero < g.eval) = (nat.zero < a ∨ nat.zero < b) := by
   simp
   match g with
