@@ -361,96 +361,17 @@ theorem Gcd.repeat_left (g: Gcd a b) (h: Gcd g.eval b): h.eval = g.eval := by
   assumption
 
 theorem Gcd.eval_eq (g: Gcd a b) (h: Gcd c d) (a_eq_c: a = c) (b_eq_d: b = d) : g.eval = h.eval := by
-  cases g <;> simp
-  {
-    rw [a_eq_c] at b_eq_d 
-    cases h <;> simp
-    any_goals assumption
-    have := (nat.comp_dec · (.inr (Compare.ord_from_eq (Eq.symm b_eq_d))))
-    contradiction
-    have := (nat.comp_dec · (.inr (Compare.ord_from_eq (Eq.symm b_eq_d))))
-    contradiction
-    have := (nat.comp_dec · (.inr (Compare.ord_from_eq b_eq_d)))
-    contradiction
-  }
-  {
-    cases h <;> simp
-    any_goals assumption
-    rw [a_eq_c, b_eq_d]
-    next d_lt_c _ => {
-      rw [←b_eq_d] at d_lt_c
-      have := nat.not_lt_zero c
-      contradiction
-    }
-    match d with
-    | .zero =>
-      rw [Gcd.left]
-      simp
-      assumption
-  }
-  {
-    cases h <;> simp
-    any_goals assumption
-    have := (nat.comp_dec · (.inr (Compare.ord_from_eq b_eq_d)))
-    contradiction
-    match c with
-    | .zero =>
-      rw [Gcd.right]
-      simp
-      assumption
-    next d_lt_c _ => {
-      rw [←a_eq_c] at d_lt_c
-      have := nat.not_lt_zero d
-      contradiction
-    }
-  }
-  {
-    cases h <;> simp
-    rw [←a_eq_c] at b_eq_d
-    have := (nat.comp_dec · (.inr (Compare.ord_from_eq b_eq_d)))
-    contradiction
-    next b_gt_a _ _ _ => {
-      rw [b_eq_d] at b_gt_a
-      have := nat.not_lt_zero a
-      contradiction
-    }
-    match a with
-    | .zero =>
-      rw [Gcd.right]
-      simp
-      assumption
-    apply Gcd.eval_eq
-    assumption
-    rw [a_eq_c, b_eq_d]
-    next b_gt_a _ _ _ d_lt_c _ => {
-      rw [←a_eq_c, ←b_eq_d] at d_lt_c
-      have := (nat.comp_dec · (.inl d_lt_c))
-      contradiction
-    }
-  }
-  {
-    cases h <;> simp
-    rw [←a_eq_c] at b_eq_d
-    have := (nat.comp_dec · (.inr (Compare.ord_from_eq (Eq.symm b_eq_d))))
-    contradiction
-    match b with
-    | .zero => 
-      rw [Gcd.left]
-      simp
-      assumption
-    match a with
-    | .zero =>
-      have := nat.not_lt_zero b
-      contradiction
-    next b_gt_a _ _ _ d_lt_c _ => {
-      rw [←a_eq_c, ←b_eq_d] at d_lt_c
-      have := (nat.comp_dec · (.inl d_lt_c))
-      contradiction
-    }
-    apply Gcd.eval_eq
-    rw [a_eq_c, b_eq_d]
-    assumption
-  }
+  apply divisible.ab_eq_ba_implies_eq
+
+  have ⟨ c_divis_h, d_divis_h ⟩  := h.correct_rev (divisible.id _)
+  rw [divisible.eq a_eq_c.symm rfl] at c_divis_h
+  rw [divisible.eq b_eq_d.symm rfl] at d_divis_h
+  exact g.correct h.eval c_divis_h d_divis_h
+
+  have ⟨ a_divis_g, b_divis_g ⟩  := g.correct_rev (divisible.id _)
+  rw [divisible.eq a_eq_c rfl] at a_divis_g
+  rw [divisible.eq b_eq_d rfl] at b_divis_g
+  exact h.correct g.eval a_divis_g b_divis_g
 
 theorem Gcd.eval_eq_right (g: Gcd a b) (h: Gcd a c) (eq: b = c) : g.eval = h.eval := by
   apply Gcd.eval_eq

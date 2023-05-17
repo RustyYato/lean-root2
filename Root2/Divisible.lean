@@ -97,3 +97,7 @@ theorem divisible.trans : divisible a b -> divisible b c -> divisible a c := by
   rw [prfx, prfy]
   apply Eq.symm
   apply nat.mul_perm0
+
+theorem divisible.eq (a_eq_c: a = c) (b_eq_d: b = d) : divisible a b = divisible c d := by
+  rw [a_eq_c]
+  rw [b_eq_d]
