@@ -133,7 +133,7 @@ theorem Gcd.left (g: Gcd a nat.zero) : g.eval = a := by
 
 theorem gcd.left : gcd a nat.zero = a := by apply Gcd.left
 
-theorem Gcd.correct (g: Gcd a b) c :
+theorem Gcd.divis_implies (g: Gcd a b) c :
   divisible a c ->
   divisible b c ->
   divisible g.eval c := by
@@ -144,7 +144,7 @@ theorem Gcd.correct (g: Gcd a b) c :
     assumption
   | .RightSucc _ _ _ _ _ _ =>
     simp
-    apply Gcd.correct
+    apply Gcd.divis_implies
     {
       have ⟨ x, prf₀ ⟩ := divis_a_c
       have ⟨ y, prf₁ ⟩ := divis_b_c
@@ -155,7 +155,7 @@ theorem Gcd.correct (g: Gcd a b) c :
     assumption
   | .LeftSucc _ _ _ _ _ _ =>
     simp
-    apply Gcd.correct
+    apply Gcd.divis_implies
     assumption
     {
       have ⟨ x, prf₀ ⟩ := divis_a_c
@@ -165,13 +165,13 @@ theorem Gcd.correct (g: Gcd a b) c :
       rw [←prf₀, ←prf₁]
     }
 
-theorem gcd.correct :
+theorem gcd.divis_implies :
   divisible a c ->
   divisible b c ->
   divisible (gcd a b) c := by
-  apply Gcd.correct
+  apply Gcd.divis_implies
 
-theorem Gcd.correct_rev (g: Gcd a b) :
+theorem Gcd.implies_divis (g: Gcd a b) :
   divisible g.eval c ->
   divisible a c ∧
   divisible b c := by
@@ -192,7 +192,7 @@ theorem Gcd.correct_rev (g: Gcd a b) :
     assumption
   | .RightSucc _ _ _ _ _ g =>
     simp at divis_g_c
-    have ⟨ divis_sub_c, divis_b_c ⟩  := Gcd.correct_rev g divis_g_c
+    have ⟨ divis_sub_c, divis_b_c ⟩  := Gcd.implies_divis g divis_g_c
     apply And.intro
     {
       have ⟨ x, prf₀ ⟩ := divis_sub_c
@@ -206,7 +206,7 @@ theorem Gcd.correct_rev (g: Gcd a b) :
     assumption
   | .LeftSucc _ _ _ _ _ g =>
     simp at divis_g_c
-    have ⟨ divis_sub_c, divis_b_c ⟩  := Gcd.correct_rev g divis_g_c
+    have ⟨ divis_sub_c, divis_b_c ⟩  := Gcd.implies_divis g divis_g_c
     apply And.intro
     assumption
     {
@@ -219,18 +219,18 @@ theorem Gcd.correct_rev (g: Gcd a b) :
       assumption
     }
 
-theorem gcd.correct_rev :
+theorem gcd.implies_divis :
   divisible (gcd a b) c ->
   divisible a c ∧ 
   divisible b c := by
-  apply Gcd.correct_rev
+  apply Gcd.implies_divis
 
 theorem Gcd.comm (f: Gcd a b) (r: Gcd b a) : f.eval = r.eval := by
-  have ⟨ divis_a_f, divis_b_f ⟩ := f.correct_rev (divisible.id _)
-  have ⟨ divis_b_r, divis_a_r ⟩ := r.correct_rev (divisible.id _)
+  have ⟨ divis_a_f, divis_b_f ⟩ := f.implies_divis (divisible.id _)
+  have ⟨ divis_b_r, divis_a_r ⟩ := r.implies_divis (divisible.id _)
 
-  have divis_r_f := Gcd.correct r f.eval divis_b_f divis_a_f
-  have divis_f_r := Gcd.correct f r.eval divis_a_r divis_b_r
+  have divis_r_f := Gcd.divis_implies r f.eval divis_b_f divis_a_f
+  have divis_f_r := Gcd.divis_implies f r.eval divis_a_r divis_b_r
   
   exact divisible.ab_eq_ba_implies_eq divis_f_r divis_r_f
 
@@ -246,24 +246,24 @@ theorem gcd.id_eval (g h: Gcd a b) : g.eval = h.eval := by
   rw [Gcd.comm h (Gcd.calc b a)]
 
 theorem Gcd.assoc (g: Gcd a b) (h: Gcd b c) (i: Gcd g.eval c) (j: Gcd a h.eval) : i.eval = j.eval := by
-  have ⟨ divis_g_i, divis_c_i ⟩ := i.correct_rev (divisible.id _)
-  have ⟨ divis_a_g, divis_b_g ⟩ := g.correct_rev (divisible.id _)
+  have ⟨ divis_g_i, divis_c_i ⟩ := i.implies_divis (divisible.id _)
+  have ⟨ divis_a_g, divis_b_g ⟩ := g.implies_divis (divisible.id _)
   have divis_a_i := divis_a_g.trans divis_g_i
   have divis_b_i := divis_b_g.trans divis_g_i
   clear divis_a_g divis_b_g divis_g_i
   
-  have ⟨ divis_a_j, divis_h_j ⟩ := j.correct_rev (divisible.id _)
-  have ⟨ divis_b_h, divis_c_h ⟩ := h.correct_rev (divisible.id _)
+  have ⟨ divis_a_j, divis_h_j ⟩ := j.implies_divis (divisible.id _)
+  have ⟨ divis_b_h, divis_c_h ⟩ := h.implies_divis (divisible.id _)
   have divis_b_j := divis_b_h.trans divis_h_j
   have divis_c_j := divis_c_h.trans divis_h_j
   clear divis_c_h divis_b_h divis_h_j
 
-  have divis_h_i := Gcd.correct h i.eval divis_b_i divis_c_i
-  have divis_j_i := Gcd.correct j i.eval divis_a_i divis_h_i
+  have divis_h_i := Gcd.divis_implies h i.eval divis_b_i divis_c_i
+  have divis_j_i := Gcd.divis_implies j i.eval divis_a_i divis_h_i
   clear divis_h_i divis_a_i divis_b_i divis_c_i
 
-  have divis_g_j := Gcd.correct g j.eval divis_a_j divis_b_j
-  have divis_i_j := Gcd.correct i j.eval divis_g_j divis_c_j
+  have divis_g_j := Gcd.divis_implies g j.eval divis_a_j divis_b_j
+  have divis_i_j := Gcd.divis_implies i j.eval divis_g_j divis_c_j
   clear divis_g_j divis_a_j divis_b_j divis_c_j
 
   exact divisible.ab_eq_ba_implies_eq divis_i_j divis_j_i
@@ -322,23 +322,23 @@ theorem gcd.eq_zero : (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat.zero) := 
 
 theorem Gcd.divisible_by_left (g: Gcd a b) (d: divisible a b): g.eval = b := by
   apply divisible.ab_eq_ba_implies_eq
-  exact Gcd.correct g b d (divisible.id _)
-  exact (Gcd.correct_rev g (divisible.id _)).right
+  exact Gcd.divis_implies g b d (divisible.id _)
+  exact (Gcd.implies_divis g (divisible.id _)).right
 
 theorem gcd.divisible_by_left (d: divisible a b) : gcd a b = b :=
   by apply Gcd.divisible_by_left _ d
 
 theorem Gcd.divisible_by_right (g: Gcd a b) (d: divisible b a): g.eval = a := by
   apply divisible.ab_eq_ba_implies_eq
-  exact Gcd.correct g a (divisible.id _) d
-  exact (Gcd.correct_rev g (divisible.id _)).left
+  exact Gcd.divis_implies g a (divisible.id _) d
+  exact (Gcd.implies_divis g (divisible.id _)).left
 
 theorem gcd.divisible_by_right (d: divisible b a) : gcd a b = a :=
   by apply Gcd.divisible_by_right _ d
 
 theorem Gcd.repeat_right (g: Gcd a b) (h: Gcd a g.eval): h.eval = g.eval := by
   apply Gcd.divisible_by_left h
-  have ⟨ _, _ ⟩ := Gcd.correct_rev g (divisible.id _)
+  have ⟨ _, _ ⟩ := Gcd.implies_divis g (divisible.id _)
   assumption
 
 theorem gcd.repeat_right : gcd a (gcd a b) = gcd a b :=
@@ -346,7 +346,7 @@ theorem gcd.repeat_right : gcd a (gcd a b) = gcd a b :=
 
 theorem Gcd.repeat_left (g: Gcd a b) (h: Gcd g.eval b): h.eval = g.eval := by
   apply Gcd.divisible_by_right h
-  have ⟨ _, _ ⟩ := Gcd.correct_rev g (divisible.id _)
+  have ⟨ _, _ ⟩ := Gcd.implies_divis g (divisible.id _)
   assumption
 
 theorem gcd.repeat_left : gcd (gcd a b) b = gcd a b :=
@@ -355,15 +355,15 @@ theorem gcd.repeat_left : gcd (gcd a b) b = gcd a b :=
 theorem Gcd.eval_eq (g: Gcd a b) (h: Gcd c d) (a_eq_c: a = c) (b_eq_d: b = d) : g.eval = h.eval := by
   apply divisible.ab_eq_ba_implies_eq
 
-  have ⟨ c_divis_h, d_divis_h ⟩  := h.correct_rev (divisible.id _)
+  have ⟨ c_divis_h, d_divis_h ⟩  := h.implies_divis (divisible.id _)
   rw [divisible.eq a_eq_c.symm rfl] at c_divis_h
   rw [divisible.eq b_eq_d.symm rfl] at d_divis_h
-  exact g.correct h.eval c_divis_h d_divis_h
+  exact g.divis_implies h.eval c_divis_h d_divis_h
 
-  have ⟨ a_divis_g, b_divis_g ⟩  := g.correct_rev (divisible.id _)
+  have ⟨ a_divis_g, b_divis_g ⟩  := g.implies_divis (divisible.id _)
   rw [divisible.eq a_eq_c rfl] at a_divis_g
   rw [divisible.eq b_eq_d rfl] at b_divis_g
-  exact h.correct g.eval a_divis_g b_divis_g
+  exact h.divis_implies g.eval a_divis_g b_divis_g
 
 theorem Gcd.eval_eq_right (g: Gcd a b) (h: Gcd a c) (eq: b = c) : g.eval = h.eval := by
   apply Gcd.eval_eq
