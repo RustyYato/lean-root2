@@ -88,3 +88,12 @@ theorem divisible.ab_eq_ba_implies_eq : divisible a b -> divisible b a -> a = b 
     have ⟨ x_eq_one, y_eq_one ⟩  := nat.mul_eq_one _ _ (Eq.symm prf₁)
     rw [x_eq_one, nat.mul_one_r] at prf₀
     assumption
+
+theorem divisible.trans : divisible a b -> divisible b c -> divisible a c := by
+  intro divis_ab divis_bc
+  have ⟨ x, prfx ⟩ := divis_ab
+  have ⟨ y, prfy ⟩ := divis_bc
+  exists y.mul x
+  rw [prfx, prfy]
+  apply Eq.symm
+  apply nat.mul_perm0
