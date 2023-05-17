@@ -344,21 +344,33 @@ theorem Gcd.divisible_by_left (g: Gcd a b) (d: divisible a b): g.eval = b := by
     exists x₀
     rw [prf, nat.mul_inc_r, nat.sat_sub_add_inv2]
 
+theorem gcd.divisible_by_left (d: divisible a b) : gcd a b = b :=
+  by apply Gcd.divisible_by_left _ d
+
 theorem Gcd.divisible_by_right (g: Gcd a b) (d: divisible b a): g.eval = a := by
   have : Gcd b a := Gcd.calc b a
   rw [Gcd.comm g this]
   apply Gcd.divisible_by_left
   assumption
 
+theorem gcd.divisible_by_right (d: divisible b a) : gcd a b = a :=
+  by apply Gcd.divisible_by_right _ d
+
 theorem Gcd.repeat_right (g: Gcd a b) (h: Gcd a g.eval): h.eval = g.eval := by
   apply Gcd.divisible_by_left h
   have ⟨ _, _ ⟩ := Gcd.correct_rev g (divisible.id _)
   assumption
 
+theorem gcd.repeat_right : gcd a (gcd a b) = gcd a b :=
+  by apply Gcd.repeat_right
+
 theorem Gcd.repeat_left (g: Gcd a b) (h: Gcd g.eval b): h.eval = g.eval := by
   apply Gcd.divisible_by_right h
   have ⟨ _, _ ⟩ := Gcd.correct_rev g (divisible.id _)
   assumption
+
+theorem gcd.repeat_left : gcd (gcd a b) b = gcd a b :=
+  by apply Gcd.repeat_left
 
 theorem Gcd.eval_eq (g: Gcd a b) (h: Gcd c d) (a_eq_c: a = c) (b_eq_d: b = d) : g.eval = h.eval := by
   apply divisible.ab_eq_ba_implies_eq
