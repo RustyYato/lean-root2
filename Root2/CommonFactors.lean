@@ -15,13 +15,6 @@ def Gcd.eval (g: Gcd a b) : nat :=
   | .LeftSucc _ _ _ _ _ g => g.eval
   | .RightSucc _ _ _ _ _ g => g.eval
 
-@[simp]
-def Gcd.depth (g: Gcd a b) : Nat := 
-  match g with
-  | .Id x | .Left x _ | .Right x _ => 0
-  | .LeftSucc _ _ _ _ _ g => g.depth + 1
-  | .RightSucc _ _ _ _ _ g => g.depth + 1
-
 def Gcd.calc (a b: nat): Gcd a b := 
   match h:ord_imp a b with
   | .Eq => by
@@ -113,21 +106,25 @@ theorem Gcd.le (g: Gcd a b) : g.eval <= a ∧ g.eval <= b ∨ a = nat.zero ∨ b
       apply Or.inr
       exact Or.inr h
 
-def gcd.le (a b: nat) : gcd a b <= a ∧ gcd a b <= b ∨ a = nat.zero ∨ b = nat.zero := by
+theorem gcd.le (a b: nat) : gcd a b <= a ∧ gcd a b <= b ∨ a = nat.zero ∨ b = nat.zero := by
   apply Gcd.le
 
 
-def Gcd.id (g: Gcd a a) : g.eval = a := by
+theorem Gcd.id (g: Gcd a a) : g.eval = a := by
   have := @nat.not_lt_id a
   match g with
   | .Id a => simp
 
-def Gcd.right (g: Gcd nat.zero a) : g.eval = a := by
+theorem gcd.id : gcd a a = a := by apply Gcd.id
+
+theorem Gcd.right (g: Gcd nat.zero a) : g.eval = a := by
   have := nat.not_lt_zero a
   match g with
   | .Id _ | .Right _ _ => simp
 
-def Gcd.left (g: Gcd a nat.zero) : g.eval = a := by
+theorem gcd.right : gcd nat.zero a = a := by apply Gcd.right
+
+theorem Gcd.left (g: Gcd a nat.zero) : g.eval = a := by
   cases g
   simp
   simp
@@ -135,7 +132,9 @@ def Gcd.left (g: Gcd a nat.zero) : g.eval = a := by
   contradiction
   contradiction
 
-def Gcd.comm (f: Gcd a b) (r: Gcd b a) : f.eval = r.eval := by
+theorem gcd.left : gcd a nat.zero = a := by apply Gcd.left
+
+theorem Gcd.comm (f: Gcd a b) (r: Gcd b a) : f.eval = r.eval := by
   cases f
   rw [r.id]
   rfl
@@ -170,10 +169,14 @@ def Gcd.comm (f: Gcd a b) (r: Gcd b a) : f.eval = r.eval := by
     contradiction
   }
 
-def gcd.comm (a b: nat) : gcd a b = gcd b a := by
+theorem gcd.comm (a b: nat) : gcd a b = gcd b a := by
   apply Gcd.comm
 
-def Gcd.correct (g: Gcd a b) :
+theorem Gcd.id_eval (g h: Gcd a b) : g.eval = h.eval := by
+  rw [Gcd.comm g (Gcd.calc b a)]
+  rw [Gcd.comm h (Gcd.calc b a)]
+
+theorem Gcd.correct (g: Gcd a b) :
   divisible a c ->
   divisible b c ->
   divisible g.eval c := by
@@ -205,13 +208,13 @@ def Gcd.correct (g: Gcd a b) :
       rw [←prf₀, ←prf₁]
     }
 
-def gcd.correct :
+theorem gcd.correct :
   divisible a c ->
   divisible b c ->
   divisible (gcd a b) c := by
   apply Gcd.correct
 
-def Gcd.correct_rev (g: Gcd a b) :
+theorem Gcd.correct_rev (g: Gcd a b) :
   divisible g.eval c ->
   divisible a c ∧
   divisible b c := by
@@ -259,8 +262,56 @@ def Gcd.correct_rev (g: Gcd a b) :
       assumption
     }
 
-def gcd.correct_rev :
+theorem gcd.correct_rev :
   divisible (gcd a b) c ->
   divisible a c ∧ 
   divisible b c := by
   apply Gcd.correct_rev
+
+theorem Gcd.ne_zero (g: Gcd a b) : (nat.zero < g.eval) = (nat.zero < a ∨ nat.zero < b) := by
+  simp
+  match g with
+  | .Id _ | .Left _ _ | .Right _ _ => simp
+  | .LeftSucc _ _ a_gt_zero b_gt_zero b_gt_a g =>
+    simp
+    rw [g.ne_zero]
+    apply Eq.propIntro
+    repeat intro ; apply Or.inl; assumption
+  | .RightSucc _ _ _ _ _ g =>
+    simp
+    rw [g.ne_zero]
+    apply Eq.propIntro
+    repeat intro ; apply Or.inl; assumption
+    intro ; apply Or.inr; assumption
+
+theorem gcd.ne_zero : (nat.zero < gcd a b) = (nat.zero < a ∨ nat.zero < b) := by
+  apply Gcd.ne_zero
+
+theorem Gcd.eq_zero (g: Gcd a b) : (g.eval = nat.zero) = (a = nat.zero ∧ b = nat.zero) := by
+  match g with
+  | .Id _ | .Left _ _ | .Right _ _ => simp
+  | .LeftSucc _ _ a_gt_zero _ _ g =>
+    simp
+    apply Eq.propIntro
+    intro g_eq_zero
+    have := g.ne_zero.mpr (.inl a_gt_zero)
+    rw [g_eq_zero] at this
+    contradiction
+    intro a_and_b_eq_zero
+    have ⟨ a_eq_zero, b_eq_zero ⟩ := a_and_b_eq_zero
+    rw [a_eq_zero] at a_gt_zero
+    contradiction
+  | .RightSucc _ _ _ b_gt_zero _ g =>
+    simp
+    apply Eq.propIntro
+    intro g_eq_zero
+    have := g.ne_zero.mpr (.inr b_gt_zero)
+    rw [g_eq_zero] at this
+    contradiction
+    intro a_and_b_eq_zero
+    have ⟨ a_eq_zero, b_eq_zero ⟩ := a_and_b_eq_zero
+    rw [b_eq_zero] at b_gt_zero
+    contradiction
+
+theorem gcd.eq_zero : (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat.zero) := by
+  apply Gcd.eq_zero
