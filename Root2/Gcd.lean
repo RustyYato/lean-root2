@@ -374,3 +374,31 @@ theorem Gcd.eval_eq_left (g: Gcd a b) (h: Gcd c b) (eq: a = c) : g.eval = h.eval
   apply Gcd.eval_eq
   assumption
   rfl
+
+theorem Gcd.eq_implies_divis (g: Gcd a b) (g_eq_b: g.eval = b) : divisible a b := by
+  have ⟨ divis_a_g, _ ⟩ := g.implies_divis (divisible.id _)
+  rw [g_eq_b] at divis_a_g
+  assumption
+
+theorem gcd.eq_implies_divis_right : gcd a b = b -> divisible a b := by
+  apply Gcd.eq_implies_divis
+
+theorem gcd.eq_implies_divis_left : gcd a b = a -> divisible b a := by
+  rw [gcd.comm]
+  apply Gcd.eq_implies_divis
+
+theorem gcd.gcd_eq_implies_divis_left : (gcd a b = a) = divisible b a := by
+  apply Eq.propIntro
+  rw [gcd.comm]
+  apply Gcd.eq_implies_divis
+  intro divis_b_a
+  apply divisible.ab_eq_ba_implies_eq
+  apply gcd.divis_implies
+  exact divisible.id _
+  assumption
+  rw [gcd.comm, gcd.divisible_by_left divis_b_a]
+  exact divisible.id _
+
+theorem gcd.gcd_eq_implies_divis_right : (gcd a b = b) = divisible a b := by
+  rw [gcd.comm]
+  apply gcd.gcd_eq_implies_divis_left
