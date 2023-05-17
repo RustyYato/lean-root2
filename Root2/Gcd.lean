@@ -412,6 +412,11 @@ theorem Gcd.eval_eq_left (g: Gcd a b) (h: Gcd c b) (eq: a = c) : g.eval = h.eval
   assumption
   rfl
 
+theorem Gcd.from_gcd (P: ∀g: nat, Prop) : P (gcd a b) -> ∀g: Gcd a b, P g.eval := by
+  intro p_gcd g
+  rw [Gcd.eval_eq g (Gcd.calc a b) rfl rfl]
+  assumption
+
 theorem Gcd.eq_implies_divis (g: Gcd a b) (g_eq_b: g.eval = b) : divisible a b := by
   have ⟨ divis_a_g, _ ⟩ := g.implies_divis (divisible.id _)
   rw [g_eq_b] at divis_a_g
