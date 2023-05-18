@@ -372,7 +372,7 @@ theorem nat.inc_gt_zero {{ a : nat }} : (a.inc <= nat.zero)=False := by
 theorem nat.zero_lt_all {{ a : nat }} : (a < nat.zero)=False := by
   unfold ord_lt; cases a <;> simp
 
-theorem nat.not_lt_id {{ a : nat }} : ¬(a < a) := by
+theorem nat.not_lt_id (a : nat) : ¬(a < a) := by
   match a with
   | nat.zero => intro; trivial
   | nat.inc a₀ => rw [nat.lt_inc_irr]; apply nat.not_lt_id

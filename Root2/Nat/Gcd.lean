@@ -330,13 +330,13 @@ theorem remainder.inc : ∀ a b h, remainder a.inc b h = (remainder a b h).inc �
       next inca_lt_b => {
         have := nat.lt_le_trans inca_lt_b not_a_lt_b
         have := nat.lt_trans (nat.a_lt_inc_a a) this
-        have := @nat.not_lt_id a
+        have := nat.not_lt_id a
         contradiction
       }
     }
   }
 
-theorem remainder.dec : ∀ (a b: nat) h, remainder a.inc b h = nat.zero -> nat.inc (remainder a b h) = b
+theorem remainder.dec : ∀ {a b: nat} {h}, remainder a.inc b h = nat.zero -> nat.inc (remainder a b h) = b
  := by
   apply remainder.induction
   {
@@ -372,7 +372,7 @@ theorem remainder.dec : ∀ (a b: nat) h, remainder a.inc b h = nat.zero -> nat.
       rw [nat.not_lt_is_sym_le] at not_a_lt_b
       have := nat.lt_le_trans inca_lt_b not_a_lt_b
       have := nat.lt_trans (nat.a_lt_inc_a _) this
-      have := @nat.not_lt_id a
+      have := nat.not_lt_id a
       contradiction
     | .inr (.inr inca_eq_b) =>
       have inca_eq_b := Compare.ord_implies_eq inca_eq_b
@@ -396,13 +396,17 @@ theorem remainder.eq_add_irr : ∀ a b h c d, remainder a b h = remainder c b h 
       match remainder.inc (nat.add c d₀) b h with
       | .inr g => rw [g]
       | .inl g₀ =>
-      rw [g₀]
-      rw [←rem_d₀]
-
-      
-      
-      admit
+      apply False.elim
+      rw [←rem_d₀] at g₀
+      have := remainder.dec g
+      rw [this] at g₀
+      clear this
+      have := remainder.lt (nat.inc (nat.add c d₀)) b h
+      rw [g₀] at this
+      have := nat.not_lt_id b
+      contradiction
     | .inl g =>
+
     admit
   
 

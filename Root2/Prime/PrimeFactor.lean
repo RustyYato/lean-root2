@@ -1145,14 +1145,14 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
     simp at adef
     rw [adef] at bdef
     rw [bdef] at this
-    have := nat.not_lt_id this
+    have := nat.not_lt_id _ this
     contradiction
   | a::as, [] =>
     have := primes_gt_one aprimes
     simp at bdef
     rw [bdef] at adef
     rw [adef] at this
-    have := nat.not_lt_id this
+    have := nat.not_lt_id _ this
     contradiction
   | a::as, b::bs =>
     simp
