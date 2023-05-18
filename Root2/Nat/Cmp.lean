@@ -240,6 +240,15 @@ theorem nat.a_le_inc_a : ∀ a: nat, a <= nat.inc a := by
   | nat.zero => apply nat.zero_le_inc
   | nat.inc a₀ => rw [nat.le_inc]; apply nat.a_le_inc_a
 
+theorem nat.no_between_id : ∀ {{a b: nat}}, a < b -> b < a -> False := by
+  intro a b a_lt_b b_lt_inca
+  match a, b with
+  | .zero, .zero => contradiction
+  | nat.inc a₀, nat.inc b₀ =>
+    rw [nat.lt_inc_irr] at a_lt_b
+    rw [nat.lt_inc_irr] at b_lt_inca
+    exact no_between_id a_lt_b b_lt_inca
+
 theorem nat.no_between_inc : ∀ {{a b: nat}}, a < b -> b < nat.inc a -> False := by
   intro a b a_lt_b b_lt_inca
   match a, b with

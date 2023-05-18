@@ -101,3 +101,7 @@ theorem divisible.trans : divisible a b -> divisible b c -> divisible a c := by
 theorem divisible.eq (a_eq_c: a = c) (b_eq_d: b = d) : divisible a b = divisible c d := by
   rw [a_eq_c]
   rw [b_eq_d]
+
+theorem divisible.gt {a b c} (a_gt_e: c < a) : divisible b a -> c < b := by
+  intro divis_a_b
+  admit
