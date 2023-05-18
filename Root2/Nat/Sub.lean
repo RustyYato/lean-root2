@@ -245,6 +245,28 @@ theorem nat.sat_sub_le : saturating_sub a b <= a := by
       apply nat.le_trans this
       apply nat.a_le_inc_a
 
+theorem nat.sat_sub_lt {a b:nat} : nat.zero < b -> b <= a -> saturating_sub a b < a := by
+  intro b_gt_zero b_le_a
+  match a with
+  | .zero => 
+    have := nat.le_zero _ b_le_a
+    rw [this] at b_gt_zero
+    contradiction
+  | .inc a₀ =>
+    match b with
+    | .inc b₀ =>
+      simp
+      have := @nat.sat_sub_lt a₀ b₀
+      rw [nat.le_inc_irr] at b_le_a
+      match b₀ with
+      | .zero =>
+        simp
+        apply nat.a_lt_inc_a
+      | .inc b₁ =>
+      have := this (nat.zero_lt_inc _) b_le_a
+      apply nat.lt_trans this
+      apply nat.a_lt_inc_a
+
 theorem nat.sat_sub_common : nat.saturating_sub (nat.add a b) (nat.add a c) = nat.saturating_sub b c := by
   match a with
   | .zero => simp

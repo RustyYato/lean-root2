@@ -66,6 +66,9 @@ def Gcd.calc (a b: nat): Gcd a b :=
 
 def gcd (a b: nat): nat := (Gcd.calc a b).eval
 
+@[simp]
+def coprime (a b: nat) : Prop := gcd a b = nat.zero.inc
+
 theorem Gcd.le (g: Gcd a b) : g.eval <= a ∧ g.eval <= b ∨ a = nat.zero ∨ b = nat.zero := by
   match g with
   | .Id a _ a_eq_b =>
@@ -546,7 +549,6 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
       match p, c with
       | .zero, .zero =>
       rw [Gcd.left] at gcd_b_c_gt_one
-      -- rw [Gcd.left] at gcd_b_c_gt_one
       match nat.mul_eq_zero _ _ p_eq_a_mul_b.symm with
       | .inl a_eq_zero =>
         match a with
@@ -554,3 +556,111 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
       | .inr b_eq_zero =>
         match b with
         | .zero => contradiction
+
+-- theorem coprime.zero_left : coprime nat.zero a -> a = nat.zero.inc := by
+--   unfold coprime
+--   intro gcd_zero_a
+--   rw [gcd.right] at gcd_zero_a
+--   assumption
+
+-- theorem coprime.zero_right : coprime a nat.zero -> a = nat.zero.inc := by
+--   unfold coprime
+--   intro gcd_zero_a
+--   rw [gcd.left] at gcd_zero_a
+--   assumption
+
+-- theorem coprime.dvd_mul_left {m n k : nat} :
+--   coprime k n -> (divisible (nat.mul m n) k ↔ divisible n k )
+--    := by admit
+
+-- theorem Gcd.mul
+--   { a b c: nat }
+--   (g: Gcd b c)
+--  : gcd (nat.mul a b) (nat.mul a c) = nat.mul a g.eval := by
+--   match g with
+--   | .Id _ _ b_eq_c =>
+--     simp
+--     rw [b_eq_c, gcd.id]
+--   | .Left _ _ _ c_eq_zero =>
+--     simp
+--     rw [c_eq_zero]
+--     rw [nat.mul_zero_r, gcd.left]
+--   | .Right _ _ b_eq_zero _ =>
+--     simp
+--     rw [b_eq_zero, nat.mul_zero_r, gcd.right]
+--   | .LeftSucc _ _ _ _ _ g =>
+--     simp
+    
+    
+--     admit
+--   | .RightSucc _ _ _ _ _ _ => admit
+
+-- -- theorem gcd.mul : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c) := by
+  
+
+-- -- theorem coprime.dvd_of_dvd_mul_left {m n k : nat} (H1 : coprime k n) (H2 : divisible (nat.mul m n) k) : divisible m k := by
+-- --   have := @coprime.dvd_mul_left m n k H1
+-- --   have := (gcd.divis_implies (@divisible.mul k k m (divisible.id k)) H2)
+-- --   rw [nat.mul_comm k m] at this
+  
+-- --   rw []
+-- --   -- by rw mul_comm at H2; exact H1.dvd_of_dvd_mul_right H2
+
+-- -- theorem gcd.left_cancel : 
+-- --   coprime k n -> gcd (nat.mul k m) n = gcd m n := by
+-- --   intro cp_k_n
+-- --   apply divisible.ab_eq_ba_implies_eq
+-- --   exists k
+
+
+-- --   admit
+
+-- -- theorem gcd.one_one_to_one : coprime a c -> coprime b c -> coprime (a.mul b) c := by
+-- --   intro a_c_coprime b_c_coprime
+-- --   have ⟨ ab_abc, c_abc ⟩ := @gcd.implies_divis (nat.mul a b) c _ (divisible.id _)
+
+-- --   have := Nat.coprime_mul_iff
+
+-- --   match h:(gcd (a.mul b) c) with
+-- --   | .zero =>
+-- --     rw [gcd.eq_zero] at h
+-- --     have ⟨ ab_eq_zero, c_eq_zero ⟩ := h
+-- --     match c with
+-- --     | .zero =>
+-- --     match  nat.mul_eq_zero _ _ ab_eq_zero with
+-- --     | .inl _ =>
+-- --       match a with
+-- --       | .zero =>
+-- --       unfold coprime at a_c_coprime
+-- --       rw [gcd.id] at a_c_coprime
+-- --       contradiction
+-- --     | .inr _ =>
+-- --       match b with
+-- --       | .zero =>
+-- --       unfold coprime at b_c_coprime
+-- --       rw [gcd.id] at b_c_coprime
+-- --       contradiction
+-- --   | .inc .zero =>rfl
+-- --   | .inc (.inc r) =>
+
+-- --     rw [h] at c_abc ab_abc
+-- --     have ⟨ x, prf ⟩ := c_abc
+-- --     clear h
+
+-- --     rw [prf, gcd.comm] at a_c_eq_one
+-- --     have ⟨ _, _ ⟩ := gcd.one_to_one_one a_c_eq_one
+-- --     admit
+
+-- -- -- -- theorem Gcd.mul_gt_one_implies_gcd_gt_one
+-- -- -- --   (gcd_a_c: Gcd a c)
+-- -- -- --   (gcd_b_c: Gcd b c)
+-- -- -- --   (gcd_p_c: Gcd p c)
+-- -- -- --   :
+-- -- -- --   p = a.mul b ->
+-- -- -- --   nat.zero < a ->
+-- -- -- --   nat.zero < b ->
+-- -- -- --   nat.zero.inc < gcd_p_c.eval -> (
+-- -- -- --     nat.zero.inc < gcd_a_c.eval ∨ 
+-- -- -- --     nat.zero.inc < gcd_b_c.eval) := by
+-- -- -- --   intro p_eq_a_mul_b a_gt_zero b_gt_zero gcd_p_c_gt_one
+
