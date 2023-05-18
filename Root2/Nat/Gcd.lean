@@ -406,8 +406,23 @@ theorem remainder.eq_add_irr : ∀ a b h c d, remainder a b h = remainder c b h 
       have := nat.not_lt_id b
       contradiction
     | .inl g =>
+    rw [g]
+    match remainder.inc (nat.add c d₀) b h with
+    | .inl g =>
+      rw [g]
+      rw [nat.eq_inc_irr]
+      assumption
+    | .inr g₀ =>
+      apply False.elim
+      rw [rem_d₀] at g
+      have := remainder.dec g₀
+      rw [this] at g
+      clear this
+      have := remainder.lt (nat.inc (nat.add a d₀)) b h
+      rw [g] at this
+      have := nat.not_lt_id b
+      contradiction
 
-    admit
   
 
 theorem remainder.mul : ∀ a b h c g, remainder (nat.mul c a) (nat.mul c b) g = (nat.mul c (remainder a b h)) := by
