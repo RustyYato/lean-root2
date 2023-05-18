@@ -1,6 +1,7 @@
 import Root2.Nat.Mul
 import Root2.Nat.Cmp
 import Root2.Nat.Mul.Cmp
+import Root2.Nat.Sub
 
 def divisible (a b: nat) : Prop := ∃ c, a = nat.mul b c
 
@@ -125,3 +126,16 @@ theorem divisible.gt {a b c} (a_gt_c: c < a) : divisible b a -> c < b ∨ b = na
     apply nat.zero_lt_inc
   ) rfl
   exact nat.lt_le_trans a_gt_c this
+
+theorem divisible.sat_sub : divisible a b -> divisible (a.saturating_sub b) b := by
+  intro divis_a_b
+  have ⟨ x, prf ⟩ := divis_a_b
+  match x with
+  | .zero =>
+    rw [nat.mul_zero_r] at prf
+    rw [prf, nat.sat_sub_zero]
+    exact divisible.zero _
+    apply nat.zero_le
+  | .inc x₀ =>
+    exists x₀
+    rw [prf, nat.mul_inc_r, nat.sat_sub_add_inv2]

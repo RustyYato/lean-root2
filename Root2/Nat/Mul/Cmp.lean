@@ -255,3 +255,39 @@ theorem nat.mul_le_cmp (m: nat.mul a b <= nat.mul c d) : nat.zero < a -> c ≤ a
   apply Compare.ord_implies_lt
   rw [h₃] at c_lt_a
   assumption
+
+theorem nat.lt_mul_irr {{a b c: nat}} (a_gt_zero: nat.zero < a) : (mul a b < mul a c) = (b < c) := by
+  apply Eq.propIntro
+  intro mul_lt
+  match b with
+  | .zero =>
+    rw [nat.mul_zero_r] at mul_lt
+    match c with
+    | .zero =>
+      rw [nat.mul_zero_r] at mul_lt
+      assumption
+    | .inc c₀ =>
+      apply nat.zero_lt_inc
+  | .inc b₀ =>
+    match c with
+    | .zero =>
+      rw [nat.mul_zero_r] at mul_lt
+      have := nat.not_lt_zero _ mul_lt
+      contradiction
+    | .inc c₀ =>
+      rw [nat.lt_inc_irr]
+      apply (nat.lt_mul_irr a_gt_zero).mp
+      rw [nat.mul_inc_r, nat.mul_inc_r] at mul_lt
+      rw [nat.lt_add_irr] at mul_lt
+      assumption
+  intro b_lt_c
+  match a, b, c with
+  | .inc a₀, .zero, .inc c₀ =>
+    rw [nat.mul_zero_r, nat.mul_inc_r]
+    simp
+    apply nat.zero_lt_inc
+  | a, .inc b₀, .inc c₀ =>
+    rw [nat.mul_inc_r, nat.mul_inc_r]
+    rw [nat.lt_add_irr]
+    apply (nat.lt_mul_irr a_gt_zero).mpr
+    assumption

@@ -23,6 +23,13 @@ theorem nat.le_add_irr (a b c: nat) : (add a b <= add a c) = (b <= c) := by
   simp
   apply nat.le_add_irr a₀
 
+theorem nat.lt_add_irr (a b c: nat) : (add a b < add a c) = (b < c) := by
+  match a with
+  | nat.zero => simp
+  | nat.inc a₀ =>
+  simp
+  apply nat.lt_add_irr a₀
+
 theorem nat.le_add_irr2 (a b c d: nat) (a_le_c: a <= c) (b_le_d: b <= d) : (add a b <= add c d) := by
   match c with
   | .zero =>

@@ -330,3 +330,15 @@ theorem nat.sub_equality_right : a = b -> ∀h₀ h₁, checked_sub c a h₀ = c
       apply nat.sub_equality_right
       assumption
     | .inc _, .zero | .zero, .inc _ => contradiction
+
+theorem nat.sat_sub_inc (a b: nat) : nat.saturating_sub (nat.inc a) b = nat.inc (nat.saturating_sub a b) ∨ nat.inc a <= b := by
+  match a, b with
+  | _, .zero => simp
+  | .zero, .inc _ =>
+    simp
+    rw [nat.sat_sub_zero]
+    apply Or.inr
+    repeat exact nat.zero_le _
+  | .inc a₀, .inc b₀ =>
+    simp
+    apply nat.sat_sub_inc

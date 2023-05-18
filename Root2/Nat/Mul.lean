@@ -116,6 +116,21 @@ theorem nat.mul_irr_l {{a b c: nat}} (a_gt_zero: nat.zero < a) : mul a b = mul a
 theorem nat.mul_irr {{a b c: nat}} (a_gt_zero: nat.zero < a) : (mul a b = mul a c) = (b = c) := by
   rw [Iff.intro (nat.mul_irr_l a_gt_zero) (@nat.mul_irr_r a b c)]
 
+  -- match a with
+  -- | .inc .zero =>
+  --   rw [nat.mul_one, nat.mul_one] at mul_lt
+  --   assumption
+  -- | .inc (.inc a₀) => 
+  --   conv at mul_lt => {
+  --     rw [nat.mul_inc]
+  --     rhs
+  --     rw [nat.mul_inc]
+  --   }
+  --   have := @nat.lt_mul_irr a₀.inc b c (nat.zero_lt_inc _)
+    
+  --   admit
+  -- simp
+
 theorem nat.mul_comm (a b: nat) : mul a b = mul b a := by
   cases a
   rw [nat.mul_zero, nat.mul_zero_r]
