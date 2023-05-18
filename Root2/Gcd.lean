@@ -493,39 +493,34 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
   (gcd_p_c: Gcd p c)
   :
   p = a.mul b ->
-  nat.zero.inc < gcd_a_c.eval ∨ 
+  nat.zero.inc < gcd_a_c.eval -> 
   nat.zero.inc < gcd_b_c.eval ->
   nat.zero.inc < gcd_p_c.eval := by
-  intro p_eq_a_mul_b gcd_a_c_gt_one_or_gcd_b_c_gt_one
-  match gcd_a_c_gt_one_or_gcd_b_c_gt_one with
-  | .inl gcd_a_c_gt_one =>
-    have ⟨ divis_a, divis_c ⟩ := gcd_a_c.implies_divis (divisible.id _)
-    have := Gcd.divis_implies gcd_p_c gcd_a_c.eval (by
-      have ⟨ x, prf ⟩ := divis_a
-      exists x.mul b
-      rw [p_eq_a_mul_b]
-      conv => {
-        lhs
-        rw [prf]
-      }
-      rw [nat.mul_perm0]) divis_c
-    exact divisible.gt gcd_a_c_gt_one this
-  | .inr gcd_b_c_gt_one =>
-    have ⟨ divis_b, divis_c ⟩ := gcd_b_c.implies_divis (divisible.id _)
-    have := Gcd.divis_implies gcd_p_c gcd_b_c.eval (by
-      have ⟨ x, prf ⟩ := divis_b
-      exists a.mul x
-      rw [p_eq_a_mul_b]
-      conv => {
-        lhs
-        rw [prf]
-      }
-      rw [nat.mul_perm7]) divis_c
-    exact divisible.gt gcd_b_c_gt_one this
-
-theorem gcd.gt_one_implies_gcd_mul_gt_one :
-  nat.zero.inc < (gcd a c) ∨ 
-  nat.zero.inc < (gcd b c) ->
-  nat.zero.inc < gcd (nat.mul a b) c := by
-  apply Gcd.gt_one_implies_gcd_mul_gt_one 
-  rfl
+  intro p_eq_a_mul_b gcd_a_c_gt_one gcd_b_c_gt_one
+  have ⟨ divis_a, divis_c ⟩ := gcd_a_c.implies_divis (divisible.id _)
+  have := Gcd.divis_implies gcd_p_c gcd_a_c.eval (by
+    have ⟨ x, prf ⟩ := divis_a
+    exists x.mul b
+    rw [p_eq_a_mul_b]
+    conv => {
+      lhs
+      rw [prf]
+    }
+    rw [nat.mul_perm0]) divis_c
+  match divisible.gt gcd_a_c_gt_one this with
+  | .inl _ => assumption
+  | .inr gcd_p_c_eq_zero =>
+    rw [Gcd.eq_zero] at gcd_p_c_eq_zero
+    have ⟨ p_eq_zero, c_eq_zero ⟩ := gcd_p_c_eq_zero
+    match p, c with
+    | .zero, .zero =>
+    rw [Gcd.left] at gcd_a_c_gt_one
+    rw [Gcd.left] at gcd_b_c_gt_one
+    match nat.mul_eq_zero _ _ p_eq_a_mul_b.symm with
+    | .inl a_eq_zero =>
+      match a with
+      | .zero => contradiction
+    | .inr b_eq_zero =>
+      match b with
+      | .zero =>
+      contradiction

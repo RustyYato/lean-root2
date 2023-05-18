@@ -102,6 +102,26 @@ theorem divisible.eq (a_eq_c: a = c) (b_eq_d: b = d) : divisible a b = divisible
   rw [a_eq_c]
   rw [b_eq_d]
 
-theorem divisible.gt {a b c} (a_gt_e: c < a) : divisible b a -> c < b := by
+theorem divisible.gt {a b c} (a_gt_c: c < a) : divisible b a -> c < b ∨ b = nat.zero := by
   intro divis_a_b
-  admit
+  have ⟨ x, prf ⟩ := divis_a_b
+  match x with
+  | .zero =>  
+    rw [nat.mul_zero_r] at prf
+    exact Or.inr prf
+  | .inc x₀ =>
+  apply Or.inl
+  rw [prf]
+  have :=  @nat.mul_output_imp_le a x₀.inc (nat.mul a x₀.inc) (by
+    match b with
+    | .zero =>  
+      match  nat.mul_eq_zero _ _ prf.symm with
+      | .inl a_eq_zero =>
+      rw [a_eq_zero] at a_gt_c
+      have := nat.not_lt_zero c
+      contradiction
+    | .inc b₀ =>
+    rw [←prf]
+    apply nat.zero_lt_inc
+  ) rfl
+  exact nat.lt_le_trans a_gt_c this
