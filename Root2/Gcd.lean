@@ -2,26 +2,25 @@ import Root2.Divisible.DivRem
 import Root2.Nat.Sub.Mul
 
 inductive Gcd : nat -> nat -> Type where
-| Id : ∀ a, Gcd a a
-| Left : ∀ a, nat.zero < a -> Gcd a nat.zero
-| Right : ∀ a, nat.zero < a -> Gcd nat.zero a
+| Id : ∀ a b, a = b -> Gcd a b
+| Left : ∀ a b, nat.zero < a -> b = nat.zero -> Gcd a b
+| Right : ∀ a b, a = nat.zero -> nat.zero < b -> Gcd a b
 | LeftSucc : ∀ a b, nat.zero < a -> nat.zero < b -> b > a -> Gcd a (b.saturating_sub a) -> Gcd a b
 | RightSucc : ∀ a b, nat.zero < a -> nat.zero < b -> b < a -> Gcd (a.saturating_sub b) b -> Gcd a b
 
 @[simp]
 def Gcd.eval (g: Gcd a b) : nat := 
   match g with
-  | .Id x | .Left x _ | .Right x _ => x
+  | .Id x _ _ | .Left x _ _ _ | .Right _ x _ _ => x
   | .LeftSucc _ _ _ _ _ g => g.eval
   | .RightSucc _ _ _ _ _ g => g.eval
 
 def Gcd.calc (a b: nat): Gcd a b := 
   match h:ord_imp a b with
   | .Eq => by
-    rw [ord_imp_eq h]
-    exact .Id b
+    exact .Id a b (ord_imp_eq h)
   | .Less => match _h₀:a with
-    | .zero => .Right b (Compare.ord_implies_lt h)
+    | .zero => .Right .zero b rfl (Compare.ord_implies_lt h)
     | .inc a₀ => by
       apply Gcd.LeftSucc
       apply nat.zero_lt_inc
@@ -40,7 +39,7 @@ def Gcd.calc (a b: nat): Gcd a b :=
         assumption
       apply Gcd.calc
   | .Greater => match h₀:b with
-    | .zero => .Left a (Compare.ord_implies_lt (ord_imp_flip.mp h))
+    | .zero => .Left a .zero (Compare.ord_implies_lt (ord_imp_flip.mp h)) rfl
     | .inc b₀ =>by
       apply Gcd.RightSucc
       exact nat.gt_implies_gt_zero (ord_imp_flip.mp h)
@@ -69,12 +68,19 @@ def gcd (a b: nat): nat := (Gcd.calc a b).eval
 
 theorem Gcd.le (g: Gcd a b) : g.eval <= a ∧ g.eval <= b ∨ a = nat.zero ∨ b = nat.zero := by
   match g with
-  | .Id a =>
+  | .Id a _ a_eq_b =>
     simp
+    rw [a_eq_b]
     apply Or.inl
-    apply nat.le_id
-  | .Left a _ => simp
-  | .Right b _ => simp
+    exact ⟨ nat.le_id _, nat.le_id _ ⟩
+  | .Left a b _ b_eq_zero =>
+    simp
+    rw [b_eq_zero]
+    simp
+  | .Right a b a_eq_zero _ =>
+    simp
+    rw [a_eq_zero]
+    simp
   | .LeftSucc _ _ _ _ _ g =>
     simp
     match g.le with
@@ -112,14 +118,18 @@ theorem gcd.le (a b: nat) : gcd a b <= a ∧ gcd a b <= b ∨ a = nat.zero ∨ b
 theorem Gcd.id (g: Gcd a a) : g.eval = a := by
   have := @nat.not_lt_id a
   match g with
-  | .Id a => simp
+  | .Id a _ _ => simp
 
 theorem gcd.id : gcd a a = a := by apply Gcd.id
 
 theorem Gcd.right (g: Gcd nat.zero a) : g.eval = a := by
   have := nat.not_lt_zero a
   match g with
-  | .Id _ | .Right _ _ => simp
+  | .Id _ _ a_eq_b =>
+    simp
+    rw [a_eq_b]
+  | .Right _ _ _ _ =>
+    simp
 
 theorem gcd.right : gcd nat.zero a = a := by apply Gcd.right
 
@@ -139,7 +149,7 @@ theorem Gcd.divis_implies (g: Gcd a b) c :
   divisible g.eval c := by
   intro divis_a_c divis_b_c
   match g with
-  | .Id _ | .Left _ _ | .Right _ _ =>
+  | .Id _ _ _ | .Left _ _ _ _ | .Right _ _ _ _ =>
     simp
     assumption
   | .RightSucc _ _ _ _ _ _ =>
@@ -177,17 +187,20 @@ theorem Gcd.implies_divis (g: Gcd a b) :
   divisible b c := by
   intro divis_g_c
   match g with
-  | .Id _ =>
+  | .Id _ _ a_eq_b =>
     simp at divis_g_c
+    rw [←a_eq_b]
     apply And.intro <;> assumption
-  | .Left _ _ =>
+  | .Left _ _ _ b_eq_zero =>
     simp at divis_g_c
     apply And.intro
     assumption
+    rw [b_eq_zero]
     apply divisible.zero
-  | .Right _ _ =>
+  | .Right _ _ a_eq_zero _ =>
     simp at divis_g_c
     apply And.intro
+    rw [a_eq_zero]
     apply divisible.zero
     assumption
   | .RightSucc _ _ _ _ _ g =>
@@ -274,11 +287,18 @@ theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
 
 theorem Gcd.left_one (g: Gcd a nat.zero.inc) : g.eval = nat.zero.inc := by
   match h:g with
-  | .Id _ | .Right _ _ => simp
-  | .Left _ _ => contradiction
+  | .Id _ _ _ =>
+    simp
+    assumption
+  | .Right _ _ _ _ => simp
+  | .Left a b _ b_eq_zero =>
+    next b_eq_one _ => {
+      rw [b_eq_zero] at b_eq_one
+      contradiction
+    }
   | .LeftSucc a b _ _ _ _ =>
     simp
-    next b_eq_one => {
+    next b_eq_one _ => {
       match a with
       | .inc a₀ => 
       next b_gt_a₀ _ _ => {
@@ -312,7 +332,18 @@ theorem gcd.right_one : gcd nat.zero.inc a = nat.zero.inc := by
 theorem Gcd.ne_zero (g: Gcd a b) : (nat.zero < g.eval) = (nat.zero < a ∨ nat.zero < b) := by
   simp
   match g with
-  | .Id _ | .Left _ _ | .Right _ _ => simp
+  | .Id _ _ a_eq_b =>
+    simp
+    rw [a_eq_b]
+    simp
+  | .Left _ _ _ b_eq_zero =>
+    simp
+    rw [b_eq_zero]
+    simp
+  | .Right _ _ a_eq_zero _ =>
+    simp
+    rw [a_eq_zero]
+    simp
   | .LeftSucc _ _ a_gt_zero b_gt_zero b_gt_a g =>
     simp
     rw [g.ne_zero]
@@ -330,7 +361,18 @@ theorem gcd.ne_zero : (nat.zero < gcd a b) = (nat.zero < a ∨ nat.zero < b) := 
 
 theorem Gcd.eq_zero (g: Gcd a b) : (g.eval = nat.zero) = (a = nat.zero ∧ b = nat.zero) := by
   match g with
-  | .Id _ | .Left _ _ | .Right _ _ => simp
+  | .Id _ _ a_eq_b =>
+    simp
+    rw [a_eq_b]
+    simp
+  | .Left _ _ _ b_eq_zero =>
+    simp
+    rw [b_eq_zero]
+    simp
+  | .Right _ _ a_eq_zero _ =>
+    simp
+    rw [a_eq_zero]
+    simp
   | .LeftSucc _ _ a_gt_zero _ _ g =>
     simp
     apply Eq.propIntro
