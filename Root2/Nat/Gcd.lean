@@ -122,8 +122,8 @@ theorem remainder.of_dvd : ∀ {a b h}, dvd a b -> remainder a b h = nat.zero :=
   {
     intro a b b_gt_zero a_lt_b
     unfold remainder; rw [(dec.pick_true (Compare.dec_lt a b) a_lt_b)]; simp
-    intro divis
-    have ⟨ x , prf ⟩ := divis
+    intro d
+    have ⟨ x , prf ⟩ := d
     rw [prf] at a_lt_b
     conv at a_lt_b => {
       rhs
@@ -144,8 +144,8 @@ theorem remainder.of_dvd : ∀ {a b h}, dvd a b -> remainder a b h = nat.zero :=
   {
     intro a b b_gt_zero b_le_a prev
     unfold remainder; rw [(dec.pick_false (Compare.dec_lt a b) b_le_a)]; simp
-    intro divis
-    exact prev (dvd.sat_sub divis)
+    intro d
+    exact prev (dvd.sat_sub d)
   }
 
 theorem remainder.to_dvd : ∀ {a b h}, remainder a b h = nat.zero -> dvd a b := by
@@ -382,11 +382,11 @@ theorem remainder.dec : ∀ {a b: nat} {h}, remainder a.inc b h = nat.zero -> na
     simp
     apply prev
     have := remainder.to_dvd rem_eq_zero
-    have divis := this.sat_sub
+    have d := this.sat_sub
     match nat.sat_sub_inc a b with
     | .inl sub_inc =>
-      rw [sub_inc] at divis
-      rw [remainder.of_dvd divis]
+      rw [sub_inc] at d
+      rw [remainder.of_dvd d]
     | .inr (.inl inca_lt_b) =>
       have inca_lt_b := Compare.ord_implies_lt inca_lt_b
       rw [nat.not_lt_is_sym_le] at not_a_lt_b

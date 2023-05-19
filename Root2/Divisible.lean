@@ -26,8 +26,8 @@ theorem dvd.one_or_id (a b: nat) : b = nat.zero.inc ∨ a = b -> dvd a b := by
   | Or.inl a => rw [a]; apply dvd.one
   | Or.inr a => rw [a]; apply dvd.id
 
-theorem dvd.is_le (divis: dvd a b) (a_nz : nat.zero < a) : b <= a := by
-  have ⟨ c, d ⟩ := divis
+theorem dvd.is_le (d: dvd a b) (a_nz : nat.zero < a) : b <= a := by
+  have ⟨ c, d ⟩ := d
   rw [d]
   match c₁:c with
   | nat.zero =>
@@ -38,10 +38,10 @@ theorem dvd.is_le (divis: dvd a b) (a_nz : nat.zero < a) : b <= a := by
     apply nat.a_le_a_mul_b
     apply nat.zero_lt_inc
 
-theorem dvd.is_nonzero (divis: dvd a b) (a_nz : nat.zero < a) : nat.zero < b := by
+theorem dvd.is_nonzero (d: dvd a b) (a_nz : nat.zero < a) : nat.zero < b := by
   match a with
   | nat.inc a₀ =>
-  have ⟨ c, a_eq_bc ⟩ := divis
+  have ⟨ c, a_eq_bc ⟩ := d
   match b with
   | nat.zero => rw [nat.mul_zero] at a_eq_bc; contradiction
   | nat.inc b₀ => apply nat.zero_lt_inc

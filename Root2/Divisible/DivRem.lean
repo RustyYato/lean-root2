@@ -2,9 +2,10 @@ import Root2.Divisible
 import Root2.DivRem
 import Root2.Nat.Reduction
 
-theorem divrem.dvd_quocient (d: divrem a b) (divis: dvd a b) : a = nat.mul b d.quocient := by
-  have ⟨ c, a_eq_bc ⟩ := divis
-  match d with
+
+theorem divrem.dvd_quocient (div: divrem a b) (d: dvd a b) : a = nat.mul b div.quocient := by
+  have ⟨ c, a_eq_bc ⟩ := d
+  match div with
     | divrem.remain h =>
       simp
       match c with
@@ -20,7 +21,7 @@ theorem divrem.dvd_quocient (d: divrem a b) (divis: dvd a b) : a = nat.mul b d.q
       | nat.zero =>
         simp at a_eq_bc
         rw [a_eq_bc] at h
-        have _ := d.div_nz
+        have _ := div.div_nz
         match b with
         | nat.zero => contradiction
         | nat.inc _ =>
@@ -38,13 +39,13 @@ theorem divrem.dvd_quocient (d: divrem a b) (divis: dvd a b) : a = nat.mul b d.q
         )
         exact y
 
-theorem divrem.dvd_remainder (d: divrem a b) (divis: dvd a b) : d.remainder = nat.zero := by
-  have x := d.def
-  have ⟨ c, dvd_def ⟩ := divis
-  have quot := d.dvd_quocient divis
-  have quot_eq_c: d.quocient = c := by {
+theorem divrem.dvd_remainder (div: divrem a b) (d: dvd a b) : div.remainder = nat.zero := by
+  have x := div.def
+  have ⟨ c, dvd_def ⟩ := d
+  have quot := div.dvd_quocient d
+  have quot_eq_c: div.quocient = c := by {
     rw  [quot] at dvd_def
-    exact (nat.mul_irr_l d.div_nz dvd_def)
+    exact (nat.mul_irr_l div.div_nz dvd_def)
   }
   rw [quot_eq_c, nat.mul_comm, ←dvd_def] at x
   have y := nat.add_to_sub x
@@ -52,15 +53,15 @@ theorem divrem.dvd_remainder (d: divrem a b) (divis: dvd a b) : d.remainder = na
   apply Eq.symm
   repeat assumption
 
-theorem divrem.not_dvd_remainder (d: divrem a b) (divis: ¬dvd a b) : nat.zero < d.remainder := by
-  match h:d.remainder with
+theorem divrem.not_dvd_remainder (div: divrem a b) (d: ¬dvd a b) : nat.zero < div.remainder := by
+  match h:div.remainder with
   | .zero =>
     apply False.elim
-    have dvd_def := d.def
+    have dvd_def := div.def
     rw [h] at dvd_def
     simp at dvd_def
-    apply divis
-    exists d.quocient
+    apply d
+    exists div.quocient
     apply Eq.symm
     rw [nat.mul_comm]
     assumption
@@ -78,26 +79,26 @@ def nat.is_dvd (a b: nat) : Decidable (dvd a b) := by
       apply dvd.id
     | nat.inc a₀ =>
       apply Decidable.isFalse
-      intro divis
-      have ⟨ _, prf ⟩ := divis
+      intro d
+      have ⟨ _, prf ⟩ := d
       simp at prf
   | nat.inc b₀ => 
-    have d := divrem.calc a (nat.inc b₀) (nat.zero_lt_inc _)
-    generalize rem : d.remainder = r
+    have div := divrem.calc a (nat.inc b₀) (nat.zero_lt_inc _)
+    generalize rem : div.remainder = r
     match r with
     | nat.zero =>
       apply Decidable.isTrue
-      have dvd_def := d.def
+      have dvd_def := div.def
       rw [rem, nat.add_zero] at dvd_def
       unfold dvd
-      exists d.quocient 
+      exists div.quocient 
       rw [nat.mul_comm]
       apply Eq.symm
       assumption
     | nat.inc r₀ =>
       apply Decidable.isFalse
-      intro divis
-      have x := d.dvd_remainder divis
+      intro d
+      have x := div.dvd_remainder d
       rw [rem] at x
       contradiction
 
@@ -105,14 +106,14 @@ inductive Quocient (n m: nat) :=
   | Quocient : ∀ q, n = nat.mul m q -> Quocient n m
 
 def dvd.find_quocient
-  (divis: dvd a b)
+  (d: dvd a b)
   (a_gt_zero : nat.zero < a)
   (x: nat)
   (no_multiples_after: ∀n, x <= n -> a ≠ nat.mul b n) : Quocient a b :=
   match x with
   | .zero =>
     False.elim (by
-      have ⟨ c, a_eq_bc ⟩ := divis
+      have ⟨ c, a_eq_bc ⟩ := d
       have c_not_multiple := no_multiples_after c (nat.zero_le _)
       contradiction
     )
@@ -122,14 +123,14 @@ def dvd.find_quocient
       apply Quocient.Quocient x₀
       assumption
     | .isFalse h₀ =>
-      exact divis.find_quocient a_gt_zero x₀ (by
+      exact d.find_quocient a_gt_zero x₀ (by
         have := nat.bounded_reduction_step (λq => ¬ (a = nat.mul b q)) x₀ h₀ no_multiples_after 
         assumption
       )
 
-def dvd.quocient (divis: dvd a b) (a_gt_zero : nat.zero < a) : Quocient a b := by
-  have b_gt_zero := divis.is_nonzero a_gt_zero
-  exact divis.find_quocient a_gt_zero a.inc (by
+def dvd.quocient (d: dvd a b) (a_gt_zero : nat.zero < a) : Quocient a b := by
+  have b_gt_zero := d.is_nonzero a_gt_zero
+  exact d.find_quocient a_gt_zero a.inc (by
     intro n a_le_n a_eq_bn
     rw [a_eq_bn] at a_le_n
     have n_le_mul := @nat.a_le_a_mul_b n b b_gt_zero

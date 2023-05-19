@@ -24,7 +24,7 @@ theorem not_prime_and_composite {{n:nat}} (p: nat.prime n) (c: nat.composite n) 
 
   match cond with
   | .inl cond₀ => 
-    let ⟨ divis, ⟨ m_ne_one, m_ne_n ⟩  ⟩ := cond₀
+    let ⟨ d, ⟨ m_ne_one, m_ne_n ⟩  ⟩ := cond₀
     match dvd_cond with
     | .inl con => contradiction
     | .inr (.inl con) => contradiction
@@ -221,12 +221,12 @@ instance nat.classify_prime : PrimeClassifier n := by
           assumption
         | .isFalse m_ne_one =>
           apply Or.inl
-          intro divis
+          intro d
           apply no_smaller_factor
           exists m
-          rw [h] at divis
+          rw [h] at d
           rw [h]
-          have _ := divis.is_le (nat.zero_lt_inc _)
+          have _ := d.is_le (nat.zero_lt_inc _)
           apply And.intro
           assumption
           apply Or.inl
