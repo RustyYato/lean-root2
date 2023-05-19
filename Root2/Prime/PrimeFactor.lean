@@ -88,9 +88,35 @@ def List.concat_sorted [Compare α] (a b: List α) : List α := match a with
 | .Eq => a₀ :: b₀ :: as.concat_sorted bs
 | .Less => b₀::(List.concat_sorted (a₀::as) bs)
 | .Greater => a₀::(List.concat_sorted as (b₀::bs))
-termination_by List.concat_sorted a b => (a, b)
+termination_by List.concat_sorted a b => a.length + b.length
+decreasing_by {
+  simp_wf
+  try {
+    rw [Nat.add_succ, Nat.add_comm (Nat.succ _), Nat.add_succ, Nat.add_comm]
+    next ys => {
+      generalize length xs + length ys = l
+      exact Nat.lt_trans (Nat.lt_succ_self l) (Nat.lt_succ_self (Nat.succ l))
+    }
+  }
+  try {
+    rw [Nat.add_succ]
+    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
+    apply Nat.succ_lt_succ
+    apply Nat.lt_succ_self
+  }
+  try {
+    rw [Nat.add_succ]
+    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
+    apply Nat.succ_lt_succ
+    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
+    apply Nat.lt_succ_self
+  }
+}
 
-theorem list_concat_sorted_empty [Compare α] {{as: List α}} : List.concat_sorted as [] = as := by
+theorem list_concat_sorted_empty_left [Compare α] {{as: List α}} : List.concat_sorted as [] = as := by
+  cases as <;> simp
+
+theorem list_concat_sorted_empty_right [Compare α] {{as: List α}} : List.concat_sorted [] as = as := by
   cases as <;> simp
 
 theorem pop_sorted [Compare α] {{a: α}} {{as: List α}} : (a::as).sorted -> as.sorted := by
@@ -117,7 +143,7 @@ theorem list_sorted_snd_fst_empty [Compare α] {{ b : α }} (bbs_sorted : (b :: 
 
 theorem list_sorted_fst_snd_empty [Compare α] {{ a : α }} (aas_sorted : (a :: as).sorted) :
   List.sorted (a :: List.concat_sorted as []) := by
-  rw [list_concat_sorted_empty]
+  rw [list_concat_sorted_empty_left]
   assumption
 
 mutual
@@ -204,8 +230,23 @@ mutual
     exact bbs_sorted.right
 end
   termination_by
-    list_sorted_fst_snd_nonempty => (as, bs)
-    list_sorted_snd_fst_nonempty => (as, bs)
+    list_sorted_fst_snd_nonempty => as.length + bs.length
+    list_sorted_snd_fst_nonempty => as.length + bs.length
+  decreasing_by {
+    simp_wf
+    try {
+      apply Nat.add_lt_add_right
+      apply Nat.lt_succ_self
+    }
+    try {
+      apply Nat.add_lt_add_left
+      apply Nat.lt_succ_self
+    }
+    try {
+      apply Nat.add_lt_add <;>
+      apply Nat.lt_succ_self
+    }
+  }
 
 theorem concat_sorted_empty_left [Compare α] (a_list: List α) : List.concat_sorted [] a_list = a_list := by
   cases a_list <;> simp
@@ -225,35 +266,54 @@ theorem concat_sorted_comm
   : alist.concat_sorted blist = blist.concat_sorted alist := by
   unfold List.concat_sorted
   match alist, blist with
-  | [], _ => simp; split <;> rfl
-  | _, [] => simp; split <;> rfl
+  | [], x => simp; cases x <;> rfl
+  | x, [] => simp; cases x <;> rfl
   | a::as, b::bs => 
     simp
-    split <;> simp
-    have a_eq_b : a = b := by
-      apply Compare.ord_implies_eq
-      assumption
-    rw [a_eq_b]
-    rw [Compare.ord_id]
-    simp
-    apply concat_sorted_comm <;> (apply pop_sorted; assumption)
-    next a_lt_b => {
-      rw [Compare.flip a_lt_b]
+    cases h:Compare.ord a b <;> simp
+    {
+      rw [Compare.flip h]
       simp
       apply concat_sorted_comm
       assumption
-      apply pop_sorted
-      assumption
+      apply pop_sorted; assumption
     }
-    next a_gt_b => {
-      rw [Compare.flip a_gt_b]
-      simp
+    {
+      rw [Compare.flip h]; simp
+      have : a = b := Compare.ord_implies_eq h
+      apply And.intro
+      assumption
+      apply And.intro
+      exact this.symm
+      apply concat_sorted_comm <;> (apply pop_sorted; assumption)
+    }
+    {
+      rw [Compare.flip h]; simp
       apply concat_sorted_comm
-      apply pop_sorted
-      assumption
+      apply pop_sorted; assumption
       assumption
     }
-  termination_by concat_sorted_comm => (alist, blist)
+termination_by concat_sorted_comm => alist.length + blist.length
+decreasing_by {
+  simp_wf
+  
+  try {
+    rw [Nat.add_succ]
+    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
+    apply Nat.succ_lt_succ
+    apply Nat.lt_succ_self
+  }
+  try {
+    rw [Nat.add_succ]
+    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
+    apply Nat.succ_lt_succ
+    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
+    apply Nat.lt_succ_self
+  }
+  try {
+    apply Nat.add_lt_add <;> (apply Nat.lt_succ_self)
+  }
+}
 
 theorem concat_sorted_keeps_sorted
   [inst: Compare α]
@@ -266,14 +326,17 @@ by
   | _, [] => unfold List.concat_sorted; split; assumption; exact a_sorted
   | [a], [b] =>
     unfold List.concat_sorted
-    split <;> simp
+    split
+    assumption
     next a' ns list_a_eq => {
       match ns with 
       | _ :: _ => simp at list_a_eq
       | [] => 
       simp at list_a_eq
       rw [←list_a_eq]
-      simp
+      rw [list_concat_sorted_empty_left]
+      rw [list_concat_sorted_empty_left]
+      rw [list_concat_sorted_empty_right]
       split
       simp
       apply Or.inr
@@ -498,7 +561,7 @@ theorem concat_sorted_preserves_all {{ α: Type _ }} [Compare α] {{ P: α -> Pr
   match alist, blist with
   | [], _ => simp; assumption
   | _, [] =>
-    rw [list_concat_sorted_empty]
+    rw [list_concat_sorted_empty_left]
     assumption
   | a :: as, b :: bs =>
     simp
