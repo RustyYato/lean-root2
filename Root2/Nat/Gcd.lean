@@ -676,3 +676,23 @@ theorem gcd.to_divis {a b c} :
 theorem gcd.is_divis a b : 
   divisible a (gcd a b) ∧ divisible b (gcd a b) := 
     gcd.to_divis (divisible.id _)
+
+theorem gcd.comm : gcd a b = gcd b a := by 
+  have ⟨ a_ab, b_ab ⟩  := gcd.is_divis a b
+  have ⟨ a_ba, b_ba ⟩  := gcd.is_divis b a
+  apply divisible.ab_eq_ba_implies_eq <;> apply gcd.of_divis <;> assumption
+
+theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
+  have ⟨ _, bc ⟩  := gcd.is_divis a (gcd b c)
+  have ⟨ b_bc, c_bc ⟩ := gcd.is_divis b c
+  have _ := divisible.trans b_bc bc
+  have _ := divisible.trans c_bc bc
+
+  have ⟨ ab, _ ⟩  := gcd.is_divis (gcd a b) c
+  have ⟨ a_ab, b_ab ⟩ := gcd.is_divis a b
+  have _ := divisible.trans a_ab ab
+  have _ := divisible.trans b_ab ab
+
+  apply divisible.ab_eq_ba_implies_eq
+  repeat any_goals apply gcd.of_divis
+  all_goals assumption
