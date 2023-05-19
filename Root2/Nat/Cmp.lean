@@ -16,8 +16,17 @@ def ord_imp_id {a:nat} : ord_imp a a = Order.Eq := by
       simp
       exact ord_imp_id
 
-def ord_imp_flip {a b:nat} {o: Order} : (ord_imp a b = o) = (ord_imp b a = o.flip) := by
-    cases a <;> cases b <;> simp <;> split <;> simp <;> apply ord_imp_flip
+def ord_imp_flip_output {a b:nat} : (ord_imp a b = (ord_imp b a).flip) := by
+  match a, b with
+  | .zero, .zero => rfl
+  | .zero, .inc b₀ => rfl
+  | .inc a₀, .zero => rfl
+  | .inc a₀, .inc b₀ =>
+    unfold ord_imp
+    exact ord_imp_flip_output
+
+def ord_imp_flip {a b:nat} {o: Order} : (ord_imp a b = o) = (ord_imp b a = o.flip) :=by
+  cases a <;> cases b <;> cases o <;> simp <;> simp <;> apply ord_imp_flip
 
 def ord_imp_trans {a b c:nat} {o: Order} : ord_imp a b = o -> ord_imp b c = o -> ord_imp a c = o := by
     intro ord_ab ord_bc
@@ -26,10 +35,21 @@ def ord_imp_trans {a b c:nat} {o: Order} : ord_imp a b = o -> ord_imp b c = o ->
     apply ord_imp_trans ord_ab ord_bc
     apply ord_imp_trans ord_ab ord_bc
 
-def ord_imp_eq {a b:nat} : ord_imp a b = Order.Eq -> a = b := by
-    intro ord_ab
-    cases a <;> cases b <;> simp <;> simp at *
-    apply ord_imp_eq ord_ab
+#print axioms ord_imp
+#print axioms ord_imp_id
+#print axioms ord_imp_flip
+#print axioms ord_imp_flip_output
+#print axioms ord_imp_trans
+
+def ord_imp_eq {a b:nat} : ord_imp a b = Order.Eq -> a = b := match a, b with
+| .zero, .zero => fun _ => rfl
+| .zero, .inc _ => Order.noConfusion
+| .inc _, .zero => Order.noConfusion
+| .inc a₀, .inc b₀ => by
+  unfold ord_imp
+  intro o
+  have := ord_imp_eq o
+  rw [this]
 
 @[simp]
 instance compare_nat : Compare nat where
@@ -39,6 +59,12 @@ instance compare_nat : Compare nat where
   ord_flip := ord_imp_flip
   ord_transitive := by apply ord_imp_trans
   ord_implies_eq := by apply ord_imp_eq
+
+#print axioms ord_imp
+#print axioms ord_imp_id
+#print axioms ord_imp_flip
+#print axioms ord_imp_trans
+#print axioms ord_imp_eq
 
 def nat.ord_imp_le_trans {a b c:nat} :
   (ord_imp a b = Order.Less ∨ ord_imp a b = Order.Eq) -> (ord_imp b c = Order.Less ∨ ord_imp b c = Order.Eq) -> ord_imp a c = Order.Less ∨ ord_imp a c = Order.Eq := by
@@ -108,10 +134,8 @@ theorem nat.not_le_is_sym_lt {{ a b: nat }} : (¬(a <= b)) = (b < a) := by
     | nat.zero => simp
     | nat.inc b₀ => simp; exact @nat.not_le_is_sym_lt a₀ b₀
 
-theorem nat.eq_inc_irr : nat.inc a = nat.inc b <-> a = b := by
-  apply Iff.intro
-  . intro inc_eq; simp at inc_eq; assumption
-  . intro eq; rw [eq]
+theorem nat.eq_inc_irr : (nat.inc a = nat.inc b) = (a = b) := by
+  simp
 
 theorem nat.lt_inc_irr (a b: nat) : (inc a < inc b) = (a < b) := by
   trivial
@@ -364,14 +388,15 @@ def nat.compare_lt (a b: nat) : Decidable (a < b) :=
     | nat.inc b₀ =>
       by rw [@nat.lt_inc a₀ b₀]; exact (nat.compare_lt a₀ b₀)
 
-def nat.compare_eq (a b: nat) : Decidable (a = b) :=
-  match a, b with
-   | nat.zero, nat.zero => Decidable.isTrue rfl
-   | nat.zero, nat.inc _ => Decidable.isFalse nat.noConfusion
-   | nat.inc _, nat.zero => Decidable.isFalse nat.noConfusion
-   | nat.inc a₀, nat.inc b₀ => (nat.compare_eq a₀ b₀).byCases
-      (fun a₀_eq_b₀ => Decidable.isTrue (a₀_eq_b₀.substr rfl))
-      (fun a₀_ne_b₀ => Decidable.isFalse (fun a_eq_b => a₀_ne_b₀ (nat.eq_inc_irr.mp a_eq_b)))
+def nat.compare_eq (a b: nat) : Decidable (a = b) := match h:ord_imp a b with
+  | .Eq => Decidable.isTrue (ord_imp_eq h)
+  | .Less | .Greater => by {
+    apply Decidable.isFalse
+    intro a_eq_b
+    rw [a_eq_b] at h
+    rw [@ord_imp_id b] at h
+    contradiction
+  }
 
 theorem nat.inc_le (a b: nat) : inc a <= b -> a <= b := by
   match b with

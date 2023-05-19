@@ -4,6 +4,13 @@ inductive Order := | Less | Eq | Greater
 def Order.flip (c: Order) : Order := match c with
 | Less => Greater | Eq => Eq | Greater => Less
 
+@[simp]
+def Order.flip_less : Order.Less.flip = Order.Greater := rfl
+@[simp]
+def Order.flip_greater : Order.Greater.flip = Order.Less := rfl
+@[simp]
+def Order.flip_eq : Order.Eq.flip = Order.Eq := rfl
+
 class Compare (α: Sort _) where
   ord (_ _: α) : Order
 
@@ -201,15 +208,15 @@ def dec_or : Decidable A -> Decidable B -> Decidable (A ∨ B) := by
   any_goals (apply Or.inr; assumption)
   apply Or.inl; assumption
 
-instance Order.dec_eq (a b: Order) : Decidable (a = b) := by
-  cases a <;> cases b <;> simp
-  any_goals apply dec_true
-  any_goals apply dec_false
+instance Order.dec_eq (a b: Order) : Decidable (a = b) := match a, b with
+| .Less, .Less | .Eq, .Eq | .Greater, .Greater => Decidable.isTrue rfl
+| .Less, .Eq | .Eq, .Less | .Greater, .Less
+| .Less, .Greater | .Eq, .Greater | .Greater, .Eq => Decidable.isFalse Order.noConfusion
 
-instance Order.dec_ne (a b: Order) : Decidable (¬a = b) := by
-  cases a <;> cases b <;> simp
-  any_goals apply dec_true
-  any_goals apply dec_false
+instance Order.dec_ne (a b: Order) : Decidable (¬a = b) :=
+   match a.dec_eq b with
+   | .isTrue a_eq_b => Decidable.isFalse (fun x => x a_eq_b)
+   | .isFalse a_ne_b => Decidable.isTrue a_ne_b
 
 instance Compare.dec_eq [Compare α] (a b: α) : Decidable (a = b) := by
   match h:Compare.ord a b with
