@@ -1,10 +1,10 @@
 import Root2.Divisible.DivRem
 
-def nat.prime_cond (n m: nat) : Prop := ((¬divisible n m) ∨ m = nat.zero.inc ∨ n = m) ∧ n ≠ nat.zero.inc
+def nat.prime_cond (n m: nat) : Prop := ((¬dvd n m) ∨ m = nat.zero.inc ∨ n = m) ∧ n ≠ nat.zero.inc
 def nat.prime (n: nat) : Prop := ∀ m, prime_cond n m
 
 @[simp]
-def nat.is_factor (n m: nat) := (divisible n m ∧ m ≠ nat.zero.inc ∧ n ≠ m) ∨ n = nat.zero.inc
+def nat.is_factor (n m: nat) := (dvd n m ∧ m ≠ nat.zero.inc ∧ n ≠ m) ∨ n = nat.zero.inc
 @[simp]
 def nat.composite (n: nat) : Prop := ∃ m, nat.is_factor n m
 
@@ -20,12 +20,12 @@ inductive PrimeClassifier (n: nat) where
 
 theorem not_prime_and_composite {{n:nat}} (p: nat.prime n) (c: nat.composite n) : False := by
   let ⟨ m, cond ⟩ := c
-  let ⟨ divis_cond, n_not_one ⟩ := p m
+  let ⟨ dvd_cond, n_not_one ⟩ := p m
 
   match cond with
   | .inl cond₀ => 
     let ⟨ divis, ⟨ m_ne_one, m_ne_n ⟩  ⟩ := cond₀
-    match divis_cond with
+    match dvd_cond with
     | .inl con => contradiction
     | .inr (.inl con) => contradiction
     | .inr (.inr con) => contradiction
@@ -48,8 +48,8 @@ def nat.has_smaller_factor_dec (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidab
     rw [x_eq_zero] at zero_divides_n
     match zero_divides_n with
     | .inl zero_factor =>
-    have ⟨ ⟨ m, divis_zero ⟩, ⟨ _, _ ⟩ ⟩  := zero_factor
-    rw [nat.mul_zero] at divis_zero
+    have ⟨ ⟨ m, dvd_zero ⟩, ⟨ _, _ ⟩ ⟩  := zero_factor
+    rw [nat.mul_zero] at dvd_zero
     contradiction
   | nat.inc nat.zero =>
     apply Decidable.isFalse
@@ -57,7 +57,7 @@ def nat.has_smaller_factor_dec (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidab
     have ⟨ q, ⟨ q_le_one, q_divides_n ⟩  ⟩ := no_smaller_factor
     match q_divides_n with
     | .inl q_factor =>
-    have ⟨ ⟨ m, divis_q ⟩, ⟨ _, _ ⟩ ⟩  := q_factor
+    have ⟨ ⟨ m, dvd_q ⟩, ⟨ _, _ ⟩ ⟩  := q_factor
     match q with
     | nat.zero => contradiction
     | nat.inc nat.zero => contradiction
@@ -96,8 +96,8 @@ def nat.has_smaller_factor_dec (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidab
         rw [nat.eq_inc_irr] at h
         contradiction
     | .isFalse n_ne_x =>
-    match n.is_divisible x with
-    | .isTrue divis_x =>
+    match n.is_dvd x with
+    | .isTrue dvd_x =>
       rw [←h₀, ←h₁]
       apply Decidable.isTrue
       exists x
@@ -113,7 +113,7 @@ def nat.has_smaller_factor_dec (x n: nat) (n_gt_one: nat.zero.inc < n) : Decidab
       contradiction
       intro x
       contradiction
-    | .isFalse not_divis_x =>
+    | .isFalse not_dvd_x =>
       apply Decidable.isFalse
       rw [←h₀, ←h₁]
       intro smaller_factor
@@ -145,11 +145,11 @@ instance nat.classify_prime : PrimeClassifier n := by
     {
       -- zero is not prime
       intro prime
-      have ⟨ not_divis, _ ⟩  := prime nat.zero.inc.inc
-      match not_divis with
-      | .inl not_divis =>
-      apply not_divis
-      apply divisible.zero
+      have ⟨ not_dvd, _ ⟩  := prime nat.zero.inc.inc
+      match not_dvd with
+      | .inl not_dvd =>
+      apply not_dvd
+      apply dvd.zero
     }
     {
       -- zero is composite
@@ -183,16 +183,16 @@ instance nat.classify_prime : PrimeClassifier n := by
     {
       -- n is not prime
       intro prime
-      have ⟨ not_divis, _ ⟩  := prime m
+      have ⟨ not_dvd, _ ⟩  := prime m
       unfold nat.is_factor at prf
 
       match prf with
       | .inr prf => rw [prf] at h; contradiction
       | .inl prf => 
       have ⟨ divi, m_not_one, m_not_n ⟩ := prf 
-      -- cases not_divis <;> contradiction
-      match not_divis with
-      | .inl not_divis => contradiction
+      -- cases not_dvd <;> contradiction
+      match not_dvd with
+      | .inl not_dvd => contradiction
       | .inr (.inl x) => contradiction
       | .inr (.inr x) => contradiction
     }
@@ -254,10 +254,10 @@ instance nat.classify_prime : PrimeClassifier n := by
         contradiction
       | .inl h₀ =>
       apply And.intro
-      have ⟨ divis_n_m, _ ⟩ := h₀
-      rw [h] at divis_n_m
+      have ⟨ dvd_n_m, _ ⟩ := h₀
+      rw [h] at dvd_n_m
       rw [h]
-      exact (divis_n_m.is_le (nat.zero_lt_inc _))
+      exact (dvd_n_m.is_le (nat.zero_lt_inc _))
       assumption
     }
 

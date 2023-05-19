@@ -146,21 +146,21 @@ theorem Gcd.left (g: Gcd a nat.zero) : g.eval = a := by
 
 theorem gcd.left : gcd a nat.zero = a := by apply Gcd.left
 
-theorem Gcd.divis_implies (g: Gcd a b) c :
-  divisible a c ->
-  divisible b c ->
-  divisible g.eval c := by
-  intro divis_a_c divis_b_c
+theorem Gcd.dvd_implies (g: Gcd a b) c :
+  dvd a c ->
+  dvd b c ->
+  dvd g.eval c := by
+  intro dvd_a_c dvd_b_c
   match g with
   | .Id _ _ _ | .Left _ _ _ _ | .Right _ _ _ _ =>
     simp
     assumption
   | .RightSucc _ _ _ _ _ _ =>
     simp
-    apply Gcd.divis_implies
+    apply Gcd.dvd_implies
     {
-      have ⟨ x, prf₀ ⟩ := divis_a_c
-      have ⟨ y, prf₁ ⟩ := divis_b_c
+      have ⟨ x, prf₀ ⟩ := dvd_a_c
+      have ⟨ y, prf₁ ⟩ := dvd_b_c
       exists x.saturating_sub y
       rw [nat.mul_sat_sub_left]
       rw [prf₀, prf₁]
@@ -168,51 +168,51 @@ theorem Gcd.divis_implies (g: Gcd a b) c :
     assumption
   | .LeftSucc _ _ _ _ _ _ =>
     simp
-    apply Gcd.divis_implies
+    apply Gcd.dvd_implies
     assumption
     {
-      have ⟨ x, prf₀ ⟩ := divis_a_c
-      have ⟨ y, prf₁ ⟩ := divis_b_c
+      have ⟨ x, prf₀ ⟩ := dvd_a_c
+      have ⟨ y, prf₁ ⟩ := dvd_b_c
       exists y.saturating_sub x
       rw [nat.mul_sat_sub_left]
       rw [←prf₀, ←prf₁]
     }
 
-theorem gcd.divis_implies :
-  divisible a c ->
-  divisible b c ->
-  divisible (gcd a b) c := by
-  apply Gcd.divis_implies
+theorem gcd.dvd_implies :
+  dvd a c ->
+  dvd b c ->
+  dvd (gcd a b) c := by
+  apply Gcd.dvd_implies
 
-theorem Gcd.implies_divis (g: Gcd a b) :
-  divisible g.eval c ->
-  divisible a c ∧
-  divisible b c := by
-  intro divis_g_c
+theorem Gcd.implies_dvd (g: Gcd a b) :
+  dvd g.eval c ->
+  dvd a c ∧
+  dvd b c := by
+  intro dvd_g_c
   match g with
   | .Id _ _ a_eq_b =>
-    simp at divis_g_c
+    simp at dvd_g_c
     rw [←a_eq_b]
     apply And.intro <;> assumption
   | .Left _ _ _ b_eq_zero =>
-    simp at divis_g_c
+    simp at dvd_g_c
     apply And.intro
     assumption
     rw [b_eq_zero]
-    apply divisible.zero
+    apply dvd.zero
   | .Right _ _ a_eq_zero _ =>
-    simp at divis_g_c
+    simp at dvd_g_c
     apply And.intro
     rw [a_eq_zero]
-    apply divisible.zero
+    apply dvd.zero
     assumption
   | .RightSucc _ _ _ _ _ g =>
-    simp at divis_g_c
-    have ⟨ divis_sub_c, divis_b_c ⟩  := Gcd.implies_divis g divis_g_c
+    simp at dvd_g_c
+    have ⟨ dvd_sub_c, dvd_b_c ⟩  := Gcd.implies_dvd g dvd_g_c
     apply And.intro
     {
-      have ⟨ x, prf₀ ⟩ := divis_sub_c
-      have ⟨ y, prf₁ ⟩ := divis_b_c
+      have ⟨ x, prf₀ ⟩ := dvd_sub_c
+      have ⟨ y, prf₁ ⟩ := dvd_b_c
       exists x.add y
       rw [nat.mul_add, ←prf₀, ←prf₁]
       rw [nat.sat_sub_add_inv]
@@ -221,13 +221,13 @@ theorem Gcd.implies_divis (g: Gcd a b) :
     }
     assumption
   | .LeftSucc _ _ _ _ _ g =>
-    simp at divis_g_c
-    have ⟨ divis_sub_c, divis_b_c ⟩  := Gcd.implies_divis g divis_g_c
+    simp at dvd_g_c
+    have ⟨ dvd_sub_c, dvd_b_c ⟩  := Gcd.implies_dvd g dvd_g_c
     apply And.intro
     assumption
     {
-      have ⟨ x, prf₀ ⟩ := divis_sub_c
-      have ⟨ y, prf₁ ⟩ := divis_b_c
+      have ⟨ x, prf₀ ⟩ := dvd_sub_c
+      have ⟨ y, prf₁ ⟩ := dvd_b_c
       exists x.add y
       rw [nat.mul_add, ←prf₀, ←prf₁]
       rw [nat.add_comm, nat.sat_sub_add_inv]
@@ -235,20 +235,20 @@ theorem Gcd.implies_divis (g: Gcd a b) :
       assumption
     }
 
-theorem gcd.implies_divis :
-  divisible (gcd a b) c ->
-  divisible a c ∧ 
-  divisible b c := by
-  apply Gcd.implies_divis
+theorem gcd.implies_dvd :
+  dvd (gcd a b) c ->
+  dvd a c ∧ 
+  dvd b c := by
+  apply Gcd.implies_dvd
 
 theorem Gcd.comm (f: Gcd a b) (r: Gcd b a) : f.eval = r.eval := by
-  have ⟨ divis_a_f, divis_b_f ⟩ := f.implies_divis (divisible.id _)
-  have ⟨ divis_b_r, divis_a_r ⟩ := r.implies_divis (divisible.id _)
+  have ⟨ dvd_a_f, dvd_b_f ⟩ := f.implies_dvd (dvd.id _)
+  have ⟨ dvd_b_r, dvd_a_r ⟩ := r.implies_dvd (dvd.id _)
 
-  have divis_r_f := Gcd.divis_implies r f.eval divis_b_f divis_a_f
-  have divis_f_r := Gcd.divis_implies f r.eval divis_a_r divis_b_r
+  have dvd_r_f := Gcd.dvd_implies r f.eval dvd_b_f dvd_a_f
+  have dvd_f_r := Gcd.dvd_implies f r.eval dvd_a_r dvd_b_r
   
-  exact divisible.ab_eq_ba_implies_eq divis_f_r divis_r_f
+  exact dvd.ab_eq_ba_implies_eq dvd_f_r dvd_r_f
 
 theorem gcd.comm (a b: nat) : gcd a b = gcd b a := by
   apply Gcd.comm
@@ -262,27 +262,27 @@ theorem gcd.id_eval (g h: Gcd a b) : g.eval = h.eval := by
   rw [Gcd.comm h (Gcd.calc b a)]
 
 theorem Gcd.assoc (g: Gcd a b) (h: Gcd b c) (i: Gcd g.eval c) (j: Gcd a h.eval) : i.eval = j.eval := by
-  have ⟨ divis_g_i, divis_c_i ⟩ := i.implies_divis (divisible.id _)
-  have ⟨ divis_a_g, divis_b_g ⟩ := g.implies_divis (divisible.id _)
-  have divis_a_i := divis_a_g.trans divis_g_i
-  have divis_b_i := divis_b_g.trans divis_g_i
-  clear divis_a_g divis_b_g divis_g_i
+  have ⟨ dvd_g_i, dvd_c_i ⟩ := i.implies_dvd (dvd.id _)
+  have ⟨ dvd_a_g, dvd_b_g ⟩ := g.implies_dvd (dvd.id _)
+  have dvd_a_i := dvd_a_g.trans dvd_g_i
+  have dvd_b_i := dvd_b_g.trans dvd_g_i
+  clear dvd_a_g dvd_b_g dvd_g_i
   
-  have ⟨ divis_a_j, divis_h_j ⟩ := j.implies_divis (divisible.id _)
-  have ⟨ divis_b_h, divis_c_h ⟩ := h.implies_divis (divisible.id _)
-  have divis_b_j := divis_b_h.trans divis_h_j
-  have divis_c_j := divis_c_h.trans divis_h_j
-  clear divis_c_h divis_b_h divis_h_j
+  have ⟨ dvd_a_j, dvd_h_j ⟩ := j.implies_dvd (dvd.id _)
+  have ⟨ dvd_b_h, dvd_c_h ⟩ := h.implies_dvd (dvd.id _)
+  have dvd_b_j := dvd_b_h.trans dvd_h_j
+  have dvd_c_j := dvd_c_h.trans dvd_h_j
+  clear dvd_c_h dvd_b_h dvd_h_j
 
-  have divis_h_i := Gcd.divis_implies h i.eval divis_b_i divis_c_i
-  have divis_j_i := Gcd.divis_implies j i.eval divis_a_i divis_h_i
-  clear divis_h_i divis_a_i divis_b_i divis_c_i
+  have dvd_h_i := Gcd.dvd_implies h i.eval dvd_b_i dvd_c_i
+  have dvd_j_i := Gcd.dvd_implies j i.eval dvd_a_i dvd_h_i
+  clear dvd_h_i dvd_a_i dvd_b_i dvd_c_i
 
-  have divis_g_j := Gcd.divis_implies g j.eval divis_a_j divis_b_j
-  have divis_i_j := Gcd.divis_implies i j.eval divis_g_j divis_c_j
-  clear divis_g_j divis_a_j divis_b_j divis_c_j
+  have dvd_g_j := Gcd.dvd_implies g j.eval dvd_a_j dvd_b_j
+  have dvd_i_j := Gcd.dvd_implies i j.eval dvd_g_j dvd_c_j
+  clear dvd_g_j dvd_a_j dvd_b_j dvd_c_j
 
-  exact divisible.ab_eq_ba_implies_eq divis_i_j divis_j_i
+  exact dvd.ab_eq_ba_implies_eq dvd_i_j dvd_j_i
 
 theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
   apply Eq.symm
@@ -402,50 +402,50 @@ theorem Gcd.eq_zero (g: Gcd a b) : (g.eval = nat.zero) = (a = nat.zero ∧ b = n
 theorem gcd.eq_zero : (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat.zero) := by
   apply Gcd.eq_zero
 
-theorem Gcd.divisible_by_left (g: Gcd a b) (d: divisible a b): g.eval = b := by
-  apply divisible.ab_eq_ba_implies_eq
-  exact Gcd.divis_implies g b d (divisible.id _)
-  exact (Gcd.implies_divis g (divisible.id _)).right
+theorem Gcd.dvd_by_left (g: Gcd a b) (d: dvd a b): g.eval = b := by
+  apply dvd.ab_eq_ba_implies_eq
+  exact Gcd.dvd_implies g b d (dvd.id _)
+  exact (Gcd.implies_dvd g (dvd.id _)).right
 
-theorem gcd.divisible_by_left (d: divisible a b) : gcd a b = b :=
-  by apply Gcd.divisible_by_left _ d
+theorem gcd.dvd_by_left (d: dvd a b) : gcd a b = b :=
+  by apply Gcd.dvd_by_left _ d
 
-theorem Gcd.divisible_by_right (g: Gcd a b) (d: divisible b a): g.eval = a := by
-  apply divisible.ab_eq_ba_implies_eq
-  exact Gcd.divis_implies g a (divisible.id _) d
-  exact (Gcd.implies_divis g (divisible.id _)).left
+theorem Gcd.dvd_by_right (g: Gcd a b) (d: dvd b a): g.eval = a := by
+  apply dvd.ab_eq_ba_implies_eq
+  exact Gcd.dvd_implies g a (dvd.id _) d
+  exact (Gcd.implies_dvd g (dvd.id _)).left
 
-theorem gcd.divisible_by_right (d: divisible b a) : gcd a b = a :=
-  by apply Gcd.divisible_by_right _ d
+theorem gcd.dvd_by_right (d: dvd b a) : gcd a b = a :=
+  by apply Gcd.dvd_by_right _ d
 
 theorem Gcd.repeat_right (g: Gcd a b) (h: Gcd a g.eval): h.eval = g.eval := by
-  apply Gcd.divisible_by_left h
-  have ⟨ _, _ ⟩ := Gcd.implies_divis g (divisible.id _)
+  apply Gcd.dvd_by_left h
+  have ⟨ _, _ ⟩ := Gcd.implies_dvd g (dvd.id _)
   assumption
 
 theorem gcd.repeat_right : gcd a (gcd a b) = gcd a b :=
   by apply Gcd.repeat_right
 
 theorem Gcd.repeat_left (g: Gcd a b) (h: Gcd g.eval b): h.eval = g.eval := by
-  apply Gcd.divisible_by_right h
-  have ⟨ _, _ ⟩ := Gcd.implies_divis g (divisible.id _)
+  apply Gcd.dvd_by_right h
+  have ⟨ _, _ ⟩ := Gcd.implies_dvd g (dvd.id _)
   assumption
 
 theorem gcd.repeat_left : gcd (gcd a b) b = gcd a b :=
   by apply Gcd.repeat_left
 
 theorem Gcd.eval_eq (g: Gcd a b) (h: Gcd c d) (a_eq_c: a = c) (b_eq_d: b = d) : g.eval = h.eval := by
-  apply divisible.ab_eq_ba_implies_eq
+  apply dvd.ab_eq_ba_implies_eq
 
-  have ⟨ c_divis_h, d_divis_h ⟩  := h.implies_divis (divisible.id _)
-  rw [divisible.eq a_eq_c.symm rfl] at c_divis_h
-  rw [divisible.eq b_eq_d.symm rfl] at d_divis_h
-  exact g.divis_implies h.eval c_divis_h d_divis_h
+  have ⟨ c_dvd_h, d_dvd_h ⟩  := h.implies_dvd (dvd.id _)
+  rw [dvd.eq a_eq_c.symm rfl] at c_dvd_h
+  rw [dvd.eq b_eq_d.symm rfl] at d_dvd_h
+  exact g.dvd_implies h.eval c_dvd_h d_dvd_h
 
-  have ⟨ a_divis_g, b_divis_g ⟩  := g.implies_divis (divisible.id _)
-  rw [divisible.eq a_eq_c rfl] at a_divis_g
-  rw [divisible.eq b_eq_d rfl] at b_divis_g
-  exact h.divis_implies g.eval a_divis_g b_divis_g
+  have ⟨ a_dvd_g, b_dvd_g ⟩  := g.implies_dvd (dvd.id _)
+  rw [dvd.eq a_eq_c rfl] at a_dvd_g
+  rw [dvd.eq b_eq_d rfl] at b_dvd_g
+  exact h.dvd_implies g.eval a_dvd_g b_dvd_g
 
 theorem Gcd.eval_eq_right (g: Gcd a b) (h: Gcd a c) (eq: b = c) : g.eval = h.eval := by
   apply Gcd.eval_eq
@@ -462,33 +462,33 @@ theorem Gcd.from_gcd (P: ∀g: nat, Prop) : P (gcd a b) -> ∀g: Gcd a b, P g.ev
   rw [Gcd.eval_eq g (Gcd.calc a b) rfl rfl]
   assumption
 
-theorem Gcd.eq_implies_divis (g: Gcd a b) (g_eq_b: g.eval = b) : divisible a b := by
-  have ⟨ divis_a_g, _ ⟩ := g.implies_divis (divisible.id _)
-  rw [g_eq_b] at divis_a_g
+theorem Gcd.eq_implies_dvd (g: Gcd a b) (g_eq_b: g.eval = b) : dvd a b := by
+  have ⟨ dvd_a_g, _ ⟩ := g.implies_dvd (dvd.id _)
+  rw [g_eq_b] at dvd_a_g
   assumption
 
-theorem gcd.eq_implies_divis_right : gcd a b = b -> divisible a b := by
-  apply Gcd.eq_implies_divis
+theorem gcd.eq_implies_dvd_right : gcd a b = b -> dvd a b := by
+  apply Gcd.eq_implies_dvd
 
-theorem gcd.eq_implies_divis_left : gcd a b = a -> divisible b a := by
+theorem gcd.eq_implies_dvd_left : gcd a b = a -> dvd b a := by
   rw [gcd.comm]
-  apply Gcd.eq_implies_divis
+  apply Gcd.eq_implies_dvd
 
-theorem gcd.gcd_eq_implies_divis_left : (gcd a b = a) = divisible b a := by
+theorem gcd.gcd_eq_implies_dvd_left : (gcd a b = a) = dvd b a := by
   apply Eq.propIntro
   rw [gcd.comm]
-  apply Gcd.eq_implies_divis
-  intro divis_b_a
-  apply divisible.ab_eq_ba_implies_eq
-  apply gcd.divis_implies
-  exact divisible.id _
+  apply Gcd.eq_implies_dvd
+  intro dvd_b_a
+  apply dvd.ab_eq_ba_implies_eq
+  apply gcd.dvd_implies
+  exact dvd.id _
   assumption
-  rw [gcd.comm, gcd.divisible_by_left divis_b_a]
-  exact divisible.id _
+  rw [gcd.comm, gcd.dvd_by_left dvd_b_a]
+  exact dvd.id _
 
-theorem gcd.gcd_eq_implies_divis_right : (gcd a b = b) = divisible a b := by
+theorem gcd.gcd_eq_implies_dvd_right : (gcd a b = b) = dvd a b := by
   rw [gcd.comm]
-  apply gcd.gcd_eq_implies_divis_left
+  apply gcd.gcd_eq_implies_dvd_left
 
 theorem Gcd.gt_one_implies_gcd_mul_gt_one
   (gcd_a_c: Gcd a c)
@@ -504,17 +504,17 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
   intro p_eq_a_mul_b a_gt_zero b_gt_zero gcd_a_c_gt_one_or_gcd_b_c_gt_one
   match gcd_a_c_gt_one_or_gcd_b_c_gt_one with
   | .inl gcd_a_c_gt_one =>
-    have ⟨ divis_a, divis_c ⟩ := gcd_a_c.implies_divis (divisible.id _)
-    have := Gcd.divis_implies gcd_p_c gcd_a_c.eval (by
-      have ⟨ x, prf ⟩ := divis_a
+    have ⟨ dvd_a, dvd_c ⟩ := gcd_a_c.implies_dvd (dvd.id _)
+    have := Gcd.dvd_implies gcd_p_c gcd_a_c.eval (by
+      have ⟨ x, prf ⟩ := dvd_a
       exists x.mul b
       rw [p_eq_a_mul_b]
       conv => {
         lhs
         rw [prf]
       }
-      rw [nat.mul_perm0]) divis_c
-    match divisible.gt gcd_a_c_gt_one this with
+      rw [nat.mul_perm0]) dvd_c
+    match dvd.gt gcd_a_c_gt_one this with
     | .inl _ => assumption
     | .inr gcd_p_c_eq_zero =>
       rw [Gcd.eq_zero] at gcd_p_c_eq_zero
@@ -531,17 +531,17 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
         match b with
         | .zero => contradiction
   | .inr gcd_b_c_gt_one => 
-    have ⟨ divis_b, divis_c ⟩ := gcd_b_c.implies_divis (divisible.id _)
-    have := Gcd.divis_implies gcd_p_c gcd_b_c.eval (by
-      have ⟨ x, prf ⟩ := divis_b
+    have ⟨ dvd_b, dvd_c ⟩ := gcd_b_c.implies_dvd (dvd.id _)
+    have := Gcd.dvd_implies gcd_p_c gcd_b_c.eval (by
+      have ⟨ x, prf ⟩ := dvd_b
       exists a.mul x
       rw [p_eq_a_mul_b]
       conv => {
         lhs
         rw [prf]
       }
-      rw [nat.mul_perm7]) divis_c
-    match divisible.gt gcd_b_c_gt_one this with
+      rw [nat.mul_perm7]) dvd_c
+    match dvd.gt gcd_b_c_gt_one this with
     | .inl _ => assumption
     | .inr gcd_p_c_eq_zero =>
       rw [Gcd.eq_zero] at gcd_p_c_eq_zero
@@ -570,7 +570,7 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
 --   assumption
 
 -- theorem coprime.dvd_mul_left {m n k : nat} :
---   coprime k n -> (divisible (nat.mul m n) k ↔ divisible n k )
+--   coprime k n -> (dvd (nat.mul m n) k ↔ dvd n k )
 --    := by admit
 
 -- theorem Gcd.mul
@@ -598,9 +598,9 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
 -- -- theorem gcd.mul : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c) := by
   
 
--- -- theorem coprime.dvd_of_dvd_mul_left {m n k : nat} (H1 : coprime k n) (H2 : divisible (nat.mul m n) k) : divisible m k := by
+-- -- theorem coprime.dvd_of_dvd_mul_left {m n k : nat} (H1 : coprime k n) (H2 : dvd (nat.mul m n) k) : dvd m k := by
 -- --   have := @coprime.dvd_mul_left m n k H1
--- --   have := (gcd.divis_implies (@divisible.mul k k m (divisible.id k)) H2)
+-- --   have := (gcd.dvd_implies (@dvd.mul k k m (dvd.id k)) H2)
 -- --   rw [nat.mul_comm k m] at this
   
 -- --   rw []
@@ -609,7 +609,7 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
 -- -- theorem gcd.left_cancel : 
 -- --   coprime k n -> gcd (nat.mul k m) n = gcd m n := by
 -- --   intro cp_k_n
--- --   apply divisible.ab_eq_ba_implies_eq
+-- --   apply dvd.ab_eq_ba_implies_eq
 -- --   exists k
 
 
@@ -617,7 +617,7 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
 
 -- -- theorem gcd.one_one_to_one : coprime a c -> coprime b c -> coprime (a.mul b) c := by
 -- --   intro a_c_coprime b_c_coprime
--- --   have ⟨ ab_abc, c_abc ⟩ := @gcd.implies_divis (nat.mul a b) c _ (divisible.id _)
+-- --   have ⟨ ab_abc, c_abc ⟩ := @gcd.implies_dvd (nat.mul a b) c _ (dvd.id _)
 
 -- --   have := Nat.coprime_mul_iff
 

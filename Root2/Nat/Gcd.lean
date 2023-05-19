@@ -67,7 +67,7 @@ theorem dec.pick_false : ∀(d: Decidable P) (p: ¬P), d = Decidable.isFalse p :
   | .isTrue q => contradiction
   | .isFalse q => rfl
 
--- theorem remainder.template : ∀ a b h, remainder a b h = nat.zero -> divisible a b := by
+-- theorem remainder.template : ∀ a b h, remainder a b h = nat.zero -> dvd a b := by
 --   apply remainder.induction
   
 --   {
@@ -116,7 +116,7 @@ theorem remainder.zero : remainder nat.zero a h = nat.zero := by
   unfold remainder
   rw [dec.pick_true (Compare.dec_lt nat.zero a) h]
 
-theorem remainder.of_divisible : ∀ {a b h}, divisible a b -> remainder a b h = nat.zero := by
+theorem remainder.of_dvd : ∀ {a b h}, dvd a b -> remainder a b h = nat.zero := by
   apply remainder.induction
   
   {
@@ -145,10 +145,10 @@ theorem remainder.of_divisible : ∀ {a b h}, divisible a b -> remainder a b h =
     intro a b b_gt_zero b_le_a prev
     unfold remainder; rw [(dec.pick_false (Compare.dec_lt a b) b_le_a)]; simp
     intro divis
-    exact prev (divisible.sat_sub divis)
+    exact prev (dvd.sat_sub divis)
   }
 
-theorem remainder.to_divisible : ∀ {a b h}, remainder a b h = nat.zero -> divisible a b := by
+theorem remainder.to_dvd : ∀ {a b h}, remainder a b h = nat.zero -> dvd a b := by
   apply remainder.induction
   
   {
@@ -156,7 +156,7 @@ theorem remainder.to_divisible : ∀ {a b h}, remainder a b h = nat.zero -> divi
     unfold remainder; rw [(dec.pick_true (Compare.dec_lt a b) a_lt_b)]; simp
     intro a_eq_zero
     rw [a_eq_zero]
-    apply divisible.zero
+    apply dvd.zero
   }
   
   {
@@ -364,7 +364,7 @@ theorem remainder.dec : ∀ {a b: nat} {h}, remainder a.inc b h = nat.zero -> na
     unfold remainder
     rw [dec.pick_true (Compare.dec_lt _ _) a_lt_b]
     simp
-    have := remainder.to_divisible rem_eq_zero
+    have := remainder.to_dvd rem_eq_zero
     match this.is_le (nat.zero_lt_inc _) with
     | .inr _ =>
       apply Compare.ord_implies_eq
@@ -381,12 +381,12 @@ theorem remainder.dec : ∀ {a b: nat} {h}, remainder a.inc b h = nat.zero -> na
     rw [dec.pick_false (Compare.dec_lt _ _) not_a_lt_b]
     simp
     apply prev
-    have := remainder.to_divisible rem_eq_zero
+    have := remainder.to_dvd rem_eq_zero
     have divis := this.sat_sub
     match nat.sat_sub_inc a b with
     | .inl sub_inc =>
       rw [sub_inc] at divis
-      rw [remainder.of_divisible divis]
+      rw [remainder.of_dvd divis]
     | .inr (.inl inca_lt_b) =>
       have inca_lt_b := Compare.ord_implies_lt inca_lt_b
       rw [nat.not_lt_is_sym_le] at not_a_lt_b
@@ -480,16 +480,16 @@ theorem remainder.mul : ∀ a b h c g, remainder (nat.mul c a) (nat.mul c b) g =
     rw [nat.mul_zero_r, remainder.zero, remainder.zero, nat.mul_zero_r]
   | .inc a₀ =>
     match remainder.inc a₀ b h with
-    | .inr a_divis_b =>
-      rw [a_divis_b]
+    | .inr a_dvd_b =>
+      rw [a_dvd_b]
       rw [nat.mul_zero_r]
-      have := remainder.to_divisible a_divis_b
-      have : divisible (nat.mul c a₀.inc) (nat.mul c b) := by
+      have := remainder.to_dvd a_dvd_b
+      have : dvd (nat.mul c a₀.inc) (nat.mul c b) := by
         have ⟨ x, prf ⟩ := this
         exists x
         rw [prf]
         rw [nat.mul_perm0]
-      rw [remainder.of_divisible this]
+      rw [remainder.of_dvd this]
     | .inl reminc =>
       rw [reminc]
       rw [reminc] at mul_rem_lt
@@ -567,7 +567,7 @@ theorem gcd.le : ∀(a b: nat), gcd a b <= a ∧ gcd a b <= b ∨ a = nat.zero �
     unfold gcd
     apply And.intro
     apply nat.le_id
-    have := remainder.to_divisible h
+    have := remainder.to_dvd h
     exact this.is_le (nat.zero_lt_inc _)
   | .inr (.inr h) =>  
     clear prev
@@ -590,7 +590,7 @@ theorem gcd.id : gcd a a = a := by
   simp
   simp
   next a => {
-    rw [(remainder.of_divisible (divisible.id a.inc))]
+    rw [(remainder.of_dvd (dvd.id a.inc))]
     rw [gcd.zero_left]
   }
 
@@ -605,20 +605,20 @@ theorem gcd.zero_right : gcd a nat.zero = a := by
     rw [gcd.zero_left]
   }
 
-theorem gcd.of_divis : 
+theorem gcd.of_dvd : 
   ∀ {a b},
-  divisible a c ->
-  divisible b c ->
-  divisible (gcd a b) c := by
+  dvd a c ->
+  dvd b c ->
+  dvd (gcd a b) c := by
   apply gcd.induction
   {
     intro a
-    intro _ divis_a_c
+    intro _ dvd_a_c
     rw [gcd.zero_left]
     assumption
   }
   {
-    intro a b zero_lt_a prev divis_a_c divis_b_c
+    intro a b zero_lt_a prev dvd_a_c dvd_b_c
     unfold gcd
     cases a
     contradiction
@@ -626,8 +626,8 @@ theorem gcd.of_divis :
     apply prev
     clear prev
     {
-      have ⟨ x, prfx ⟩ := divis_a_c
-      have ⟨ y, prfy ⟩ := divis_b_c
+      have ⟨ x, prfx ⟩ := dvd_a_c
+      have ⟨ y, prfy ⟩ := dvd_b_c
       exists remainder y x (by
         match x with
         | .zero => rw [nat.mul_zero_r] at prfx; contradiction
@@ -643,70 +643,70 @@ theorem gcd.of_divis :
     assumption
   }
 
-theorem gcd.to_divis {a b c} : 
-  divisible (gcd a b) c ->
-  divisible a c ∧ 
-  divisible b c := by
-  apply @gcd.induction (fun a b => ∀c, divisible (gcd a b) c -> divisible a c ∧ divisible b c) _ _ a b
+theorem gcd.to_dvd {a b c} : 
+  dvd (gcd a b) c ->
+  dvd a c ∧ 
+  dvd b c := by
+  apply @gcd.induction (fun a b => ∀c, dvd (gcd a b) c -> dvd a c ∧ dvd b c) _ _ a b
   {
-    intro a b divis_gcd
-    rw [gcd.zero_left] at divis_gcd
+    intro a b dvd_gcd
+    rw [gcd.zero_left] at dvd_gcd
     apply And.intro
-    exact divisible.zero _
+    exact dvd.zero _
     assumption
   }
   {
-    intro a b a_gt_zero prev c divis_gcd
-    unfold gcd at divis_gcd
+    intro a b a_gt_zero prev c dvd_gcd
+    unfold gcd at dvd_gcd
     match a with
     | .zero => contradiction
     | .inc a₀ =>
-    simp at divis_gcd
-    have ⟨ divis_a, divis_b ⟩  := prev c divis_gcd
+    simp at dvd_gcd
+    have ⟨ dvd_a, dvd_b ⟩  := prev c dvd_gcd
     apply And.intro
     assumption
     have ⟨ x, prf ⟩  := remainder.def b a₀.inc a_gt_zero
     rw [prf]
-    apply divisible.add
+    apply dvd.add
     assumption
-    apply divisible.mul
+    apply dvd.mul
     assumption
   }
 
-theorem gcd.is_divis a b : 
-  divisible a (gcd a b) ∧ divisible b (gcd a b) := 
-    gcd.to_divis (divisible.id _)
+theorem gcd.is_dvd a b : 
+  dvd a (gcd a b) ∧ dvd b (gcd a b) := 
+    gcd.to_dvd (dvd.id _)
 
 theorem gcd.comm : gcd a b = gcd b a := by 
-  have ⟨ a_ab, b_ab ⟩  := gcd.is_divis a b
-  have ⟨ a_ba, b_ba ⟩  := gcd.is_divis b a
-  apply divisible.ab_eq_ba_implies_eq <;> apply gcd.of_divis <;> assumption
+  have ⟨ a_ab, b_ab ⟩  := gcd.is_dvd a b
+  have ⟨ a_ba, b_ba ⟩  := gcd.is_dvd b a
+  apply dvd.ab_eq_ba_implies_eq <;> apply gcd.of_dvd <;> assumption
 
 theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
-  have ⟨ _, bc ⟩  := gcd.is_divis a (gcd b c)
-  have ⟨ b_bc, c_bc ⟩ := gcd.is_divis b c
-  have _ := divisible.trans b_bc bc
-  have _ := divisible.trans c_bc bc
+  have ⟨ _, bc ⟩  := gcd.is_dvd a (gcd b c)
+  have ⟨ b_bc, c_bc ⟩ := gcd.is_dvd b c
+  have _ := dvd.trans b_bc bc
+  have _ := dvd.trans c_bc bc
 
-  have ⟨ ab, _ ⟩  := gcd.is_divis (gcd a b) c
-  have ⟨ a_ab, b_ab ⟩ := gcd.is_divis a b
-  have _ := divisible.trans a_ab ab
-  have _ := divisible.trans b_ab ab
+  have ⟨ ab, _ ⟩  := gcd.is_dvd (gcd a b) c
+  have ⟨ a_ab, b_ab ⟩ := gcd.is_dvd a b
+  have _ := dvd.trans a_ab ab
+  have _ := dvd.trans b_ab ab
 
-  apply divisible.ab_eq_ba_implies_eq
-  repeat any_goals apply gcd.of_divis
+  apply dvd.ab_eq_ba_implies_eq
+  repeat any_goals apply gcd.of_dvd
   all_goals assumption
 
 theorem gcd.one_left : gcd nat.zero.inc a = nat.zero.inc := by
-  have ⟨ divis_one, _ ⟩   := gcd.is_divis nat.zero.inc a 
-  apply divisible.ab_eq_ba_implies_eq
-  exact divisible.one _
+  have ⟨ dvd_one, _ ⟩   := gcd.is_dvd nat.zero.inc a 
+  apply dvd.ab_eq_ba_implies_eq
+  exact dvd.one _
   assumption
 
 theorem gcd.one_right : gcd a nat.zero.inc = nat.zero.inc := by
-  have ⟨ _, divis_one ⟩   := gcd.is_divis a nat.zero.inc
-  apply divisible.ab_eq_ba_implies_eq
-  exact divisible.one _
+  have ⟨ _, dvd_one ⟩   := gcd.is_dvd a nat.zero.inc
+  apply dvd.ab_eq_ba_implies_eq
+  exact dvd.one _
   assumption
 
 theorem gcd.zero : ∀ { a b }, (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat.zero) := by

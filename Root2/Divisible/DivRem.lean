@@ -2,7 +2,7 @@ import Root2.Divisible
 import Root2.DivRem
 import Root2.Nat.Reduction
 
-theorem divrem.divisible_quocient (d: divrem a b) (divis: divisible a b) : a = nat.mul b d.quocient := by
+theorem divrem.dvd_quocient (d: divrem a b) (divis: dvd a b) : a = nat.mul b d.quocient := by
   have ⟨ c, a_eq_bc ⟩ := divis
   match d with
     | divrem.remain h =>
@@ -32,33 +32,33 @@ theorem divrem.divisible_quocient (d: divrem a b) (divis: divisible a b) : a = n
         rw [nat.mul_inc_r, nat.add_comm]
         apply Eq.symm
         apply nat.sub_to_add
-        have y := d₀.divisible_quocient (by 
+        have y := d₀.dvd_quocient (by 
           have x := nat.add_to_sub (Eq.symm a_eq_bc)
           exact ⟨ c₀, x ⟩
         )
         exact y
 
-theorem divrem.divisible_remainder (d: divrem a b) (divis: divisible a b) : d.remainder = nat.zero := by
+theorem divrem.dvd_remainder (d: divrem a b) (divis: dvd a b) : d.remainder = nat.zero := by
   have x := d.def
-  have ⟨ c, divis_def ⟩ := divis
-  have quot := d.divisible_quocient divis
+  have ⟨ c, dvd_def ⟩ := divis
+  have quot := d.dvd_quocient divis
   have quot_eq_c: d.quocient = c := by {
-    rw  [quot] at divis_def
-    exact (nat.mul_irr_l d.div_nz divis_def)
+    rw  [quot] at dvd_def
+    exact (nat.mul_irr_l d.div_nz dvd_def)
   }
-  rw [quot_eq_c, nat.mul_comm, ←divis_def] at x
+  rw [quot_eq_c, nat.mul_comm, ←dvd_def] at x
   have y := nat.add_to_sub x
   rw [nat.checked_sub_aa] at y
   apply Eq.symm
   repeat assumption
 
-theorem divrem.not_divisible_remainder (d: divrem a b) (divis: ¬divisible a b) : nat.zero < d.remainder := by
+theorem divrem.not_dvd_remainder (d: divrem a b) (divis: ¬dvd a b) : nat.zero < d.remainder := by
   match h:d.remainder with
   | .zero =>
     apply False.elim
-    have divis_def := d.def
-    rw [h] at divis_def
-    simp at divis_def
+    have dvd_def := d.def
+    rw [h] at dvd_def
+    simp at dvd_def
     apply divis
     exists d.quocient
     apply Eq.symm
@@ -69,13 +69,13 @@ theorem divrem.not_divisible_remainder (d: divrem a b) (divis: ¬divisible a b) 
 
 
 @[simp]
-def nat.is_divisible (a b: nat) : Decidable (divisible a b) := by
+def nat.is_dvd (a b: nat) : Decidable (dvd a b) := by
   match b with
   | nat.zero =>
     match a with
     | nat.zero =>
       apply Decidable.isTrue
-      apply divisible.id
+      apply dvd.id
     | nat.inc a₀ =>
       apply Decidable.isFalse
       intro divis
@@ -87,9 +87,9 @@ def nat.is_divisible (a b: nat) : Decidable (divisible a b) := by
     match r with
     | nat.zero =>
       apply Decidable.isTrue
-      have divis_def := d.def
-      rw [rem, nat.add_zero] at divis_def
-      unfold divisible
+      have dvd_def := d.def
+      rw [rem, nat.add_zero] at dvd_def
+      unfold dvd
       exists d.quocient 
       rw [nat.mul_comm]
       apply Eq.symm
@@ -97,15 +97,15 @@ def nat.is_divisible (a b: nat) : Decidable (divisible a b) := by
     | nat.inc r₀ =>
       apply Decidable.isFalse
       intro divis
-      have x := d.divisible_remainder divis
+      have x := d.dvd_remainder divis
       rw [rem] at x
       contradiction
 
 inductive Quocient (n m: nat) :=
   | Quocient : ∀ q, n = nat.mul m q -> Quocient n m
 
-def divisible.find_quocient
-  (divis: divisible a b)
+def dvd.find_quocient
+  (divis: dvd a b)
   (a_gt_zero : nat.zero < a)
   (x: nat)
   (no_multiples_after: ∀n, x <= n -> a ≠ nat.mul b n) : Quocient a b :=
@@ -127,7 +127,7 @@ def divisible.find_quocient
         assumption
       )
 
-def divisible.quocient (divis: divisible a b) (a_gt_zero : nat.zero < a) : Quocient a b := by
+def dvd.quocient (divis: dvd a b) (a_gt_zero : nat.zero < a) : Quocient a b := by
   have b_gt_zero := divis.is_nonzero a_gt_zero
   exact divis.find_quocient a_gt_zero a.inc (by
     intro n a_le_n a_eq_bn
@@ -137,30 +137,30 @@ def divisible.quocient (divis: divisible a b) (a_gt_zero : nat.zero < a) : Quoci
     exact (nat.comp_dec (nat.a_lt_inc_a _) (nat.le_trans a_le_n n_le_mul))
   )
 
-theorem divisible.remainder_zero : a < b -> nat.add a (nat.mul b c) = nat.mul b d -> a = nat.zero := by
+theorem dvd.remainder_zero : a < b -> nat.add a (nat.mul b c) = nat.mul b d -> a = nat.zero := by
   intro a_lt_b mul
   have b_gt_zero := nat.gt_implies_gt_zero a_lt_b
   have bd_divrem := divrem.calc (nat.mul b d) b b_gt_zero
   have abc_divrem := divrem.calc (nat.add a (nat.mul b c)) b b_gt_zero
-  have bd_rem := bd_divrem.divisible_remainder (by exists d)
+  have bd_rem := bd_divrem.dvd_remainder (by exists d)
   have ⟨ abd_rem_eq_bd_rem, _ ⟩  := abc_divrem.eq bd_divrem mul
   rw [←abd_rem_eq_bd_rem] at bd_rem
   have ⟨ abc_divrem_rem, _ ⟩ := abc_divrem.from_def a_lt_b
   rw [←abc_divrem_rem]
   assumption
 
-theorem divisible.divdef (n_divis: divisible (nat.add (nat.mul a b) c) b): divisible c b := by
-  match c.is_divisible b with
+theorem dvd.divdef (n_dvd: dvd (nat.add (nat.mul a b) c) b): dvd c b := by
+  match c.is_dvd b with
   | .isTrue _ => assumption
-  | .isFalse c_not_divis =>
+  | .isFalse c_not_dvd =>
     match b with
     | .zero =>
-      rw [nat.mul_zero_r, nat.add_zero] at n_divis
+      rw [nat.mul_zero_r, nat.add_zero] at n_dvd
       contradiction
     | .inc b₀ =>
     apply False.elim
     have d := divrem.calc c b₀.inc (nat.zero_lt_inc _)
-    have ⟨ x, prf ⟩ := n_divis
+    have ⟨ x, prf ⟩ := n_dvd
     rw [←d.def] at prf
     rw [nat.add_perm1, nat.add_comm] at prf
     conv at prf => {
@@ -172,27 +172,27 @@ theorem divisible.divdef (n_divis: divisible (nat.add (nat.mul a b) c) b): divis
     }
     rw [←nat.mul_add] at prf
     generalize nat.add a d.quocient = ingore at prf
-    have rem_gt_zero := divrem.not_divisible_remainder d c_not_divis
+    have rem_gt_zero := divrem.not_dvd_remainder d c_not_dvd
     have drem_lt := d.remainder_lt
-    have := divisible.remainder_zero drem_lt prf
+    have := dvd.remainder_zero drem_lt prf
     rw [this] at rem_gt_zero
     contradiction
     
-theorem divisible.from_ne : a ≠ b -> (∃ x, divisible a x ≠ divisible b x) := by
+theorem dvd.from_ne : a ≠ b -> (∃ x, dvd a x ≠ dvd b x) := by
   intro a_eq_b
-  match a.is_divisible b with
+  match a.is_dvd b with
   | .isFalse _ =>
     exists b
-    intro divis_eq_divis
-    have := divis_eq_divis.mpr (divisible.id _)
+    intro dvd_eq_dvd
+    have := dvd_eq_dvd.mpr (dvd.id _)
     contradiction
-  | .isTrue a_divis_b => 
-  match b.is_divisible a with
+  | .isTrue a_dvd_b => 
+  match b.is_dvd a with
   | .isFalse _ =>
     exists a
-    intro divis_eq_divis
-    have := divis_eq_divis.mp (divisible.id _)
+    intro dvd_eq_dvd
+    have := dvd_eq_dvd.mp (dvd.id _)
     contradiction
-  | .isTrue b_divis_a =>
-  have := divisible.ab_eq_ba_implies_eq a_divis_b b_divis_a
+  | .isTrue b_dvd_a =>
+  have := dvd.ab_eq_ba_implies_eq a_dvd_b b_dvd_a
   contradiction

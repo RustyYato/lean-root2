@@ -34,7 +34,7 @@ def search_factors
         contradiction
       | .inl divis =>
         have ⟨ divis, f_ne_one, n_ne_f ⟩ := divis
-        have  not_factor := no_factors_after_x f (divisible.is_nonzero divis (nat.lt_trans (nat.zero_lt_inc _) n_gt_one))
+        have  not_factor := no_factors_after_x f (dvd.is_nonzero divis (nat.lt_trans (nat.zero_lt_inc _) n_gt_one))
         apply not_factor
         unfold nat.is_factor
         apply Or.inl
@@ -54,7 +54,7 @@ def search_factors
       | .inl divis =>
         have ⟨ divis, f_ne_one, n_ne_f ⟩ := divis
         have  not_factor := no_factors_after_x f (by
-          have f_gt_zero := divisible.is_nonzero divis (nat.lt_trans (nat.zero_lt_inc _) n_gt_one)
+          have f_gt_zero := dvd.is_nonzero divis (nat.lt_trans (nat.zero_lt_inc _) n_gt_one)
           exact nat.bump_lt f_gt_zero (Ne.symm f_ne_one)
           )
         apply not_factor
@@ -67,10 +67,10 @@ def search_factors
         assumption
     )
   | nat.inc (nat.inc x₁) => by
-    match n.is_divisible x with
-    | .isTrue divis_n_x =>
+    match n.is_dvd x with
+    | .isTrue dvd_n_x =>
       have n_gt_zero := nat.lt_trans (nat.zero_lt_inc _) n_gt_one
-      match divis_n_x.quocient n_gt_zero with
+      match dvd_n_x.quocient n_gt_zero with
       | .Quocient q n_eq_xq =>
       match h₁:q with
       | nat.zero => rw [nat.mul_zero_r] at n_eq_xq; rw [n_eq_xq] at n_gt_one; contradiction
@@ -89,7 +89,7 @@ def search_factors
       have b_ne_n := nat.mul_output_lt b_gt_one a_gt_one n_eq_xq
       rw [nat.mul_comm] at n_eq_xq
       exact Factors.MkFactors _ _ a_gt_one b_gt_one a_ne_n b_ne_n n_eq_xq
-    | .isFalse not_divis_n_x =>
+    | .isFalse not_dvd_n_x =>
       have := search_factors (nat.inc x₁) n composite n_gt_one
       exact search_factors (nat.inc x₁) n composite n_gt_one (nat.lt_trans (nat.a_lt_inc_a _) x_lt_n) (by
         intro m x₀_lt_m  is_factor_nm
