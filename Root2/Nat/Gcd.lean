@@ -735,3 +735,19 @@ theorem gcd.zero : ∀ { a b }, (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat
     have ⟨ _, _ ⟩ := h
     contradiction
   }
+
+theorem gcd.dvd_left : (gcd a b = b) = dvd a b := by
+  apply Eq.propIntro
+  intro g
+  have ⟨ d, _ ⟩  := gcd.is_dvd a b
+  rw [g] at d
+  assumption
+  intro d
+  apply dvd.to_eq
+  apply gcd.of_dvd d (dvd.id _)
+  have ⟨ _, _ ⟩  := gcd.is_dvd a b
+  assumption
+
+theorem gcd.dvd_right : (gcd a b = a) = dvd b a := by
+  rw [gcd.comm]
+  apply gcd.dvd_left
