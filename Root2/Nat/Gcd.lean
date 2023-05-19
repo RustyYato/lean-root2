@@ -678,6 +678,10 @@ theorem gcd.bounded_eq : ∀a b, gcd a b = gcd.bounded a b :=
 
 def coprime a b := gcd.bounded a b = nat.zero.inc
 
+theorem coprime.gcd (c: coprime a b) : gcd a b = nat.zero.inc := by  
+  rw [gcd.bounded_eq]
+  assumption
+
 instance : Decidable (coprime a b) := by
   unfold coprime
   apply nat.compare_eq
