@@ -78,7 +78,7 @@ def search_factors
         rw [nat.mul_one_r] at n_eq_xq
         rw [n_eq_xq] at x_lt_n
         rw [←h₀] at x_lt_n
-        have := nat.not_lt_id x_lt_n
+        have := nat.not_lt_id x
         contradiction
       | nat.inc (nat.inc q₀) =>
       rw [←h₁] at n_eq_xq

@@ -609,7 +609,10 @@ theorem gcd.of_divis :
     {
       have ⟨ x, prfx ⟩ := divis_a_c
       have ⟨ y, prfy ⟩ := divis_b_c
-      exists remainder y x (by admit)
+      exists remainder y x (by
+        match x with
+        | .zero => rw [nat.mul_zero_r] at prfx; contradiction
+        | .inc _ => apply nat.zero_lt_inc)
       rw [prfy]
       conv => {
         lhs
@@ -618,9 +621,7 @@ theorem gcd.of_divis :
       }
       rw [remainder.mul]
     }
-    {
-      admit
-    }
+    assumption
   }
 
 #print axioms gcd.of_divis
