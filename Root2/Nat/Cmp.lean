@@ -326,6 +326,20 @@ theorem nat.lt_le_trans : ∀ {{a b c: nat}}, a < b -> b <= c -> a < c := by
       rw [nat.lt_inc] at *
       exact nat.lt_le_trans a_lt_b b_lt_c
 
+theorem nat.le_lt_trans : ∀ {{a b c: nat}}, a <= b -> b < c -> a < c := by
+  intro a b c a_lt_b b_lt_c
+  match c with
+  | nat.zero => match b with
+     | nat.inc b₀ => have := nat.not_lt_zero _ b_lt_c; contradiction
+  | nat.inc c₀ => match b with
+    | nat.zero => match a with
+      | nat.zero => apply nat.zero_lt_inc
+    | nat.inc b₀ => match a with
+      | nat.zero => apply nat.zero_lt_inc
+      | nat.inc a₀ =>
+      rw [nat.lt_inc] at *
+      exact nat.le_lt_trans a_lt_b b_lt_c
+
 def nat.compare_le (a b: nat) : Decidable (a <= b) :=
   match a with
   | nat.zero => Decidable.isTrue (by unfold ord_le; cases b <;> simp)

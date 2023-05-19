@@ -381,14 +381,14 @@ theorem remainder.dec : ∀ {a b: nat} {h}, remainder a.inc b h = nat.zero -> na
       contradiction
   }
 
-theorem remainder.eq_add_irr : ∀ a b h c d, remainder a b h = remainder c b h -> remainder (nat.add a d) b h = remainder (nat.add c d) b h := by
+theorem remainder.eq_add_right_irr : ∀ a b h c d, remainder a b h = remainder c b h -> remainder (nat.add a d) b h = remainder (nat.add c d) b h := by
   intro a b h c d rem_a_eq_rem_c
   match d with
   | .zero =>  
     rw [nat.add_zero_r, nat.add_zero_r]
     assumption
   | .inc d₀ =>
-    have rem_d₀ := remainder.eq_add_irr a b h c d₀ rem_a_eq_rem_c
+    have rem_d₀ := remainder.eq_add_right_irr a b h c d₀ rem_a_eq_rem_c
     rw [nat.add_inc, nat.add_inc]
     match remainder.inc (nat.add a d₀) b h with
     | .inr g => 
@@ -423,6 +423,10 @@ theorem remainder.eq_add_irr : ∀ a b h c d, remainder a b h = remainder c b h 
       have := nat.not_lt_id b
       contradiction
 
+theorem remainder.eq_add_left_irr : ∀ a b h c d, remainder a b h = remainder c b h -> remainder (nat.add d a) b h = remainder (nat.add d c) b h := by
+  intro _ _ _ _ d
+  rw [nat.add_comm d _, nat.add_comm d _]
+  apply remainder.eq_add_right_irr
   
 
 theorem remainder.mul : ∀ a b h c g, remainder (nat.mul c a) (nat.mul c b) g = (nat.mul c (remainder a b h)) := by
@@ -479,8 +483,17 @@ theorem remainder.mul : ∀ a b h c g, remainder (nat.mul c a) (nat.mul c b) g =
         rhs
         rw [←this]
       }
-      
-      admit
+      rw [nat.mul_inc_r]
+      rw [nat.mul_inc_r]
+      apply remainder.eq_add_left_irr
+      rw [nat.mul_inc_r] at mul_rem_lt
+      rw [nat.add_comm] at mul_rem_lt
+      have := nat.le_lt_trans (
+        nat.a_le_a_plus_b _ _
+      ) mul_rem_lt
+      rw [nat.add_comm] at mul_rem_lt
+      rw [remainder.eq_lt _ _ _ this]
+      apply remainder.mul
 
 def gcd (a b: nat) : nat := match h:a with
 | .zero => b
