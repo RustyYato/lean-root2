@@ -529,8 +529,9 @@ decreasing_by {
   apply remainder.lt b a₀.inc
 }
 
-def remainder.bounded (x a b: nat): nat.zero < b -> nat := match x with
-  | .zero => fun _ => a
+def remainder.bounded (x a b: nat):
+   nat.zero < b -> nat := match x with
+  | .zero => fun _ => .zero
   | .inc x₀ =>
   fun zero_lt_b =>
     match Compare.dec_lt a b with
@@ -538,13 +539,13 @@ def remainder.bounded (x a b: nat): nat.zero < b -> nat := match x with
     | .isFalse _ => remainder.bounded x₀ (a.saturating_sub b) b zero_lt_b
 
 @[reducible]
-def gcd.bounded (x a b: nat) : nat :=
+def gcd.bounded_imp (x a b: nat) : nat :=
   match x with
   | .zero => .zero
   | .inc x₀ => 
       match h:a with
     | .zero => b
-    | .inc a₀ => gcd.bounded x₀ (remainder.bounded (nat.inc b) b a (by rw [h]; apply nat.zero_lt_inc)) a
+    | .inc a₀ => gcd.bounded_imp x₀ (remainder.bounded (nat.inc b) b a (by rw [h]; apply nat.zero_lt_inc)) a
 
 def gcd.induction { P: nat -> nat -> Prop } :
   (∀a, P nat.zero a) ->
@@ -559,20 +560,130 @@ def gcd.induction { P: nat -> nat -> Prop } :
     apply remainder.lt
   }
 
-def coprime a b := gcd a b = nat.zero.inc
-
 @[reducible]
-def gcd.bounded_run a b := gcd.bounded (nat.add a b).inc a b
+def gcd.bounded a b := gcd.bounded_imp (nat.add a b).inc a b
 
-#eval gcd.bounded_run nat.zero.inc.inc.inc nat.zero.inc.inc.inc.inc.inc.inc
-#eval gcd nat.zero.inc nat.zero
-#reduce gcd.bounded_run nat.zero.inc nat.zero
+theorem remainder.bounded_check : ∀ a b h,
+    a < x ->
+    a < y ->
+    bounded x a b h
+  = bounded y a b h := by
+  intro a b h a_lt_x a_lt_y
+  have x_gt_zero := nat.gt_implies_gt_zero a_lt_x
+  have y_gt_zero := nat.gt_implies_gt_zero a_lt_y
+  match x, y with
+  | .inc x₀, .inc y₀ =>
+  clear x_gt_zero y_gt_zero
+  unfold bounded
+  cases Compare.dec_lt a b <;> simp
+  match b with
+  | .inc b₀ =>
+  have b_le_a : b₀.inc <= a := by
+    apply (@nat.not_lt_is_sym_le a b₀.inc).mp
+    assumption
+  have := @nat.sat_sub_lt a b₀.inc (nat.zero_lt_inc _) b_le_a
+  apply remainder.bounded_check
+  rw [nat.lt_inc_to_le] at a_lt_x
+  exact nat.lt_le_trans this a_lt_x
+  rw [nat.lt_inc_to_le] at a_lt_y
+  exact nat.lt_le_trans this a_lt_y
 
-theorem check : gcd.bounded_run nat.zero.inc nat.zero = nat.zero.inc := by decide
+theorem remainder.bounded_eq : ∀a b h, remainder a b h = remainder.bounded a.inc a b h := by
+  apply remainder.induction
+  {
+    intro a b h a_lt_b
+    unfold remainder remainder.bounded
+    rw [dec.pick_true (Compare.dec_lt _ _) a_lt_b]
+  }
+  {
+    intro a b h not_a_lt_b prev
+    unfold remainder remainder.bounded
+    rw [dec.pick_false (Compare.dec_lt _ _) not_a_lt_b]
+    simp
+    rw [prev]
+    apply remainder.bounded_check
+    apply nat.a_lt_inc_a
+    apply nat.sat_sub_lt
+    assumption
+    apply (@nat.not_lt_is_sym_le a b).mp
+    assumption
+  }
+
+theorem gcd.bounded_check : ∀ a b,
+    a < x ->
+    a < y ->
+    bounded_imp x a b
+  = bounded_imp y a b := by
+  intro a b a_lt_x a_lt_y
+  have x_gt_zero := nat.gt_implies_gt_zero a_lt_x
+  have y_gt_zero := nat.gt_implies_gt_zero a_lt_y
+  match x, y with
+  | .inc x₀, .inc y₀ =>
+  clear x_gt_zero y_gt_zero
+  unfold bounded_imp
+  match a with
+  | .zero => simp
+  | .inc a₀ =>
+  simp
+  apply gcd.bounded_check
+  have a_lt_x : a₀ < x₀ := a_lt_x
+  apply nat.le_lt_trans _ a_lt_x
+  apply (@nat.lt_inc_to_le _ _).mp
+  rw [←remainder.bounded_eq]
+  apply remainder.lt
+  
+  have a_lt_y : a₀ < y₀ := a_lt_y
+  apply nat.le_lt_trans _ a_lt_y
+  apply (@nat.lt_inc_to_le _ _).mp
+  rw [←remainder.bounded_eq]
+  apply remainder.lt
+  
+
+theorem gcd.bounded_imp_eq : ∀a b, gcd a b = gcd.bounded_imp (nat.add a b).inc a b := by
+  apply gcd.induction
+  {
+    intro a
+    rfl
+  }
+  {
+    intro a b h prev
+    unfold gcd gcd.bounded_imp
+    match a with
+    | .zero => contradiction
+    | .inc a₀ =>
+    simp
+    rw [prev]
+    clear prev
+    rw [remainder.bounded_eq]
+    apply gcd.bounded_check
+    apply nat.lt_trans (nat.a_lt_inc_a _)
+    rw [nat.lt_inc_irr]
+    rw [nat.lt_add_const_irr]
+    apply nat.zero_lt_inc
+
+    rw [←remainder.bounded_eq]
+    have := remainder.lt b a₀.inc h
+    apply nat.lt_le_trans (remainder.lt b a₀.inc h)
+    rw [nat.le_inc_irr]
+    conv => {
+      lhs
+      rw [←nat.add_zero_r a₀]
+    }
+    rw [nat.le_add_irr]
+    apply nat.zero_le
+  }
+
+theorem gcd.bounded_eq : ∀a b, gcd a b = gcd.bounded a b := 
+  fun a b => gcd.bounded_imp_eq a b
+
+def coprime a b := gcd.bounded a b = nat.zero.inc
 
 instance : Decidable (coprime a b) := by
   unfold coprime
   apply nat.compare_eq
+
+-- check that coprime is reducible
+example : coprime nat.zero.inc.inc.inc nat.zero.inc.inc.inc.inc := by decide
 
 theorem gcd.zero_left: gcd nat.zero a = a := by 
   unfold gcd
