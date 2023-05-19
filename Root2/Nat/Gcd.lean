@@ -696,3 +696,42 @@ theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
   apply divisible.ab_eq_ba_implies_eq
   repeat any_goals apply gcd.of_divis
   all_goals assumption
+
+theorem gcd.one_left : gcd nat.zero.inc a = nat.zero.inc := by
+  have ⟨ divis_one, _ ⟩   := gcd.is_divis nat.zero.inc a 
+  apply divisible.ab_eq_ba_implies_eq
+  exact divisible.one _
+  assumption
+
+theorem gcd.one_right : gcd a nat.zero.inc = nat.zero.inc := by
+  have ⟨ _, divis_one ⟩   := gcd.is_divis a nat.zero.inc
+  apply divisible.ab_eq_ba_implies_eq
+  exact divisible.one _
+  assumption
+
+theorem gcd.zero : ∀ { a b }, (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat.zero) := by
+  apply gcd.induction
+  {
+    intro a
+    rw [gcd.zero_left]
+    simp
+  }
+  {
+    intro a b h prev
+    unfold gcd
+    match a with
+    | .zero => simp
+    | .inc a₀ =>
+    conv => {
+      lhs 
+      lhs
+      simp
+    }
+    apply Eq.propIntro
+    intro x 
+    have ⟨ _, _ ⟩  := prev.mp x
+    contradiction
+    intro h
+    have ⟨ _, _ ⟩ := h
+    contradiction
+  }
