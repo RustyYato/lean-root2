@@ -1,6 +1,6 @@
 import Root2.Nat.Cmp
 import Root2.Nat.Sub
-import Root2.Divisible
+import Root2.Divisible.DivRem
 
 def remainder (a b: nat): nat.zero < b -> nat :=
   fun zero_lt_b =>
@@ -234,6 +234,26 @@ theorem remainder.add_left : ∀ a b h c, remainder (nat.add a c) b h = remainde
     }
   }
 
+theorem remainder.def : ∀a b h, ∃x, a = nat.add (remainder a b h) (nat.mul b x) := by
+  apply remainder.induction
+  {
+    intro a b h a_lt_b
+    exists nat.zero
+    unfold remainder
+    rw [dec.pick_true (Compare.dec_lt _ _) a_lt_b]
+    rw [nat.mul_zero_r, nat.add_zero_r]
+  }
+  {
+    intro a b h not_a_lt_b prev
+    have ⟨ x, prf ⟩ := prev
+    exists x.inc
+    unfold remainder
+    rw [dec.pick_false (Compare.dec_lt _ _) not_a_lt_b]
+    rw [nat.mul_inc_r, nat.add_perm7, ←prf]
+    rw [nat.add_comm, nat.sat_sub_add_inv]
+    exact nat.not_lt_is_sym_le.mp not_a_lt_b
+  }
+
 theorem remainder.add : ∀ a b h c, remainder (nat.add a c) b h = remainder (nat.add (remainder a b h) (remainder c b h)) b h := by
   apply remainder.induction
   {
@@ -427,7 +447,6 @@ theorem remainder.eq_add_left_irr : ∀ a b h c d, remainder a b h = remainder c
   intro _ _ _ _ d
   rw [nat.add_comm d _, nat.add_comm d _]
   apply remainder.eq_add_right_irr
-  
 
 theorem remainder.mul : ∀ a b h c g, remainder (nat.mul c a) (nat.mul c b) g = (nat.mul c (remainder a b h)) := by
   -- (c * a) % (c * b) = c * (a % b)
@@ -624,4 +643,63 @@ theorem gcd.of_divis :
     assumption
   }
 
-#print axioms gcd.of_divis
+-- theorem gcd.is_divis a b : 
+--   divisible a (gcd a b) ∧ divisible b (gcd a b) := by
+--   apply And.intro
+--   apply @gcd.induction (fun a b => divisible a (gcd a b))
+--   {
+--     intro a
+--     exact divisible.zero _
+--   }
+--   {
+--     intro a b a_gt_zero prev
+--     unfold gcd
+--     cases a
+--     contradiction
+--     simp
+--     apply divisible.trans _ prev
+--     clear prev
+
+--     admit
+--   }
+--   admit
+
+-- theorem gcd.to_divis a b : 
+--   divisible (gcd a b) c ->
+--   divisible a c ∧ 
+--   divisible b c := by
+--   have ⟨ divis_a, divis_b ⟩ := gcd.is_divis a b
+--   intro divis_gcd
+--   apply And.intro
+--   apply divisible.trans divis_a divis_gcd
+--   apply divisible.trans divis_b divis_gcd
+
+theorem gcd.to_divis a b c : 
+  divisible (gcd a b) c ->
+  divisible a c ∧ 
+  divisible b c := by
+  apply @gcd.induction (fun a b => ∀c, divisible (gcd a b) c -> divisible a c ∧ divisible b c) _ _ a b
+  {
+    intro a b divis_gcd
+    rw [gcd.zero_left] at divis_gcd
+    apply And.intro
+    exact divisible.zero _
+    assumption
+  }
+  {
+    intro a b a_gt_zero prev c divis_gcd
+    unfold gcd at divis_gcd
+    match a with
+    | .zero => contradiction
+    | .inc a₀ =>
+    simp at divis_gcd
+    have ⟨ divis_a, divis_b ⟩  := prev c divis_gcd
+    apply And.intro
+    assumption
+    have ⟨ x, prf ⟩  := remainder.def b a₀.inc a_gt_zero
+    rw [prf]
+    apply divisible.add
+    assumption
+    apply divisible.mul
+    assumption
+  }

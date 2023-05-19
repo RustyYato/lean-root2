@@ -50,6 +50,13 @@ theorem Not.not_divisible_def (d: ¬divisible a b): not_divisible a b := by
   intro c a_bc
   exact (d ⟨ c, a_bc ⟩)
 
+theorem divisible.add (da: divisible a c) (db: divisible b c): divisible (nat.add a b) c := by
+  have ⟨ x, prfx ⟩ := da
+  have ⟨ y, prfy ⟩ := db
+  exists x.add y
+  rw [prfx, prfy]
+  rw [nat.mul_add]
+
 theorem divisible.mul (d: divisible a b): divisible (nat.mul a c) b := by
   have ⟨ b₀, a_eq_bb₀ ⟩ := d
   exists nat.mul b₀ c
