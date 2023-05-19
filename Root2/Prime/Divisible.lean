@@ -2,6 +2,7 @@ import Root2.Prime
 import Root2.Divisible
 import Root2.Nat.Sub.Add
 import Root2.Nat.Sub.Mul
+import Root2.Nat.Gcd.Coprime
 
 theorem dvd.sub_r {{a b: nat}} (d: dvd a b) (b_le_a: b <= a) : dvd (a.checked_sub b b_le_a) b := by
   match a with
@@ -101,29 +102,14 @@ theorem dvd.mul_sub_right {{ a b c: nat }} (d: dvd (nat.mul a b) c) : ∀ h, dvd
   apply dvd.mul_sub_left
   assumption
 
-theorem dvd.prime_ge {{ a b c: nat }} (cprime: c.prime) :
-  dvd (nat.mul a b) c  -> nat.zero < nat.mul a b -> c <= a ∨ c <= b := by
-  intro dvd_ab_c ab_gt_zero
-  have := dvd_ab_c.is_le ab_gt_zero
-  have ⟨ x, prf ⟩ := dvd_ab_c
-
-  admit
-
-theorem dvd.prime2 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
-  dvd (nat.mul a b) c -> a ≠ c -> dvd b c := by
-  intro dvd_ab_c not_dvd_a_c
-  match b.is_dvd c with
-  | .isTrue _ => assumption
-  | .isFalse b_not_dvd_c =>
-
-  have ⟨ x, prf ⟩ := dvd_ab_c
-  apply False.elim
-  apply not_dvd_a_c
-
-
-  
-  admit
-
+theorem dvd.prime.cancel_left {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
+  a ≠ c ->
+  dvd (nat.mul a b) c -> dvd b c := by
+  intro a_ne_c d
+  match aprime.to_coprime_or_eq cprime with
+  | .inr _ => contradiction
+  | .inl cp_a_c =>
+  exact cp_a_c.cancel_left d
 
 theorem dvd.prime {{ a b c: nat }} (cprime: c.prime) :
   dvd (nat.mul a b) c -> dvd a c ∨ dvd b c := by
@@ -183,6 +169,7 @@ theorem dvd.prime {{ a b c: nat }} (cprime: c.prime) :
   simp at prf
   clear dvd_ab_c
   -- a * b ≠ c * x (c prime, 0 < a < c, 0 < b < c)
+  
   
   admit
   termination_by dvd.prime => a.add b

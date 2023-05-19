@@ -63,6 +63,10 @@ theorem dvd.mul (d: dvd a b): dvd (nat.mul a c) b := by
   rw [a_eq_bb₀]
   rw [nat.mul_perm0]
 
+theorem dvd.mul_left (a b: nat): dvd (nat.mul a b) b := by
+  exists a
+  rw [nat.mul_comm]
+
 theorem dvd.not (nd: ¬ dvd a b) : not_dvd a b := by
   intro x a_eq_bx
   apply nd

@@ -827,41 +827,6 @@ theorem force_contains [Compare α] {{alist blist: List α}} (anot: ¬ contains 
     }
   termination_by force_contains => (alist, blist)
 
-theorem PrimeFactorization.is_complete_inv2 (f: PrimeFactorization n) :
-  ∀p:nat, p.prime -> ¬contains f.factors p -> ¬dvd n p := by
-  intro p pprime not_contains dvd_np
-  match f with
-  | .PrimeFactors nfactors nprimes nsorted ndef =>
-  simp at not_contains
-  match nfactors with 
-  | [] => 
-    simp at ndef
-    rw [ndef] at dvd_np
-    have := one_not_dvd_prime p pprime
-    contradiction
-  | x::xs =>
-  simp at ndef
-  rw [ndef] at dvd_np
-  have ⟨ x_ne_p, not_contains_xs_p ⟩ := not_contains_pop2 not_contains
-  clear not_contains
-  generalize h:(PrimeFactorization.PrimeFactors xs nprimes.right (pop_sorted nsorted) rfl) = xs_factorization
-  have not_dvd_xs_p := xs_factorization.is_complete_inv2 p pprime (by 
-    rw [←h]
-    simp
-    assumption
-  )
-  clear h xs_factorization
-  have not_dvd_x_p : ¬ dvd x p := by
-    have ⟨ cond, _ ⟩ := nprimes.left p
-    match cond with
-    | .inl _ => assumption
-    | .inr (.inl _) =>
-      have := nat.prime_ne_one pprime
-      contradiction
-    | .inr (.inr _) => contradiction
-  clear x_ne_p nsorted f
-  admit
-
 theorem nat.distribute_terms :
   nat.mul (nat.add c (nat.mul b a)) (nat.add e (nat.mul d a)) =
   nat.add
@@ -905,103 +870,6 @@ theorem nat.distribute_terms :
     rw [nat.mul_comm a]
   }
 
--- x * xs = p * F
--- (p * x₀ + r₀) * (p * xs₁ + r₁) = p * F
--- p * x₀ * (p * xs₁ + r₁) + r₀ * (p * xs₁ + r₁) = p * F
--- p * x₀ * (p * xs₁ + r₁) + r₀ * p * xs₁ + r₀ * r₁ = p * F
--- r₀ * r₁ = 0 (mod p)
-
-theorem dvd.prime4 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
-  dvd (nat.mul a b) c -> a ≠ c -> dvd b c := by
-  intro dvd_ab_c a_ne_c
-  have div_a_c := divrem.calc a c (nat.prime_gt_zero cprime)
-  have div_b_c := divrem.calc b c (nat.prime_gt_zero cprime)
-  have not_dvd_a_c : ¬ dvd a c := by 
-    have ⟨ prf, _ ⟩ := aprime c
-    match prf with
-    | .inl _ => assumption
-    | .inr (.inl _) => have := nat.prime_ne_one cprime; contradiction
-    | .inr (.inr _) => contradiction
-  rw [←div_a_c.def, ←div_b_c.def] at dvd_ab_c
-  rw [nat.distribute_terms] at dvd_ab_c
-  have := dvd.divdef dvd_ab_c
-  clear dvd_ab_c
-  have ⟨ x, prf ⟩ := this
-  match x with
-  | .zero =>  
-    rw [nat.mul_zero_r] at prf
-    match nat.mul_eq_zero _ _ prf with
-    | .inl rem_a_eq_zero => 
-      have : dvd a c := by
-        exists div_a_c.quocient
-        have := div_a_c.def
-        rw [rem_a_eq_zero, nat.add_zero, nat.mul_comm] at this
-        exact Eq.symm this
-      contradiction
-    | .inr rem_b_eq_zero =>
-      exists div_b_c.quocient
-      have := div_b_c.def
-      rw [rem_b_eq_zero, nat.add_zero, nat.mul_comm] at this
-      exact Eq.symm this
-  | .inc x₀ =>
-  -- a | b + b * c -> a | b ∨ a | (c + 1)
-  have ⟨ div_ac_rem_gt_zero, div_bc_rem_gt_zero ⟩  : nat.zero < div_a_c.remainder ∧ nat.zero < div_b_c.remainder := by
-    rw [nat.mul_inc_r] at prf
-    match c with
-    | .zero =>
-      have := nat.prime_ne_zero cprime
-      contradiction
-    | .inc c₀ =>
-    have := nat.a_le_a_plus_b c₀.inc (nat.mul c₀.inc x₀)
-    have := nat.lt_le_trans (nat.zero_lt_inc c₀) this
-    rw [←prf] at this
-    exact nat.mul_ne_zero _ _ this
-  apply False.elim
-    
-  
-  admit
-
-theorem dvd.prime3 {{ a b c: nat }} (aprime: a.prime) (cprime: c.prime) :
-  dvd (nat.mul a b) c -> a ≠ c -> dvd b c := by
-  intro dvd_ab_c not_dvd_a_c
-  match b.is_dvd c with
-  | .isTrue _ => assumption
-  | .isFalse b_not_dvd_c =>
-
-  have ⟨ x, prf ⟩ := dvd_ab_c
-  apply False.elim
-  
-  match b with
-  | .zero =>
-    have := dvd.zero c
-    contradiction
-  | .inc b₀ =>
-  
-  have afact := a.factorize (nat.prime_gt_zero aprime)
-  have bfact := b₀.inc.factorize (nat.zero_lt_inc _)
-
-  have ab_fact := afact.merge bfact
-  have bcont := bfact.is_complete_inv c b_not_dvd_c
-
-  have afact_def := afact.of_prime aprime
-
-  have acont : ¬ contains afact.factors c := by
-    rw [afact_def]
-    intro acont
-    simp at acont
-    rw [acont] at not_dvd_a_c
-    contradiction
-
-  clear afact_def
-
-  have abcont := force_contains acont bcont
-  simp at abcont
-
-
-  
-  admit
-
-
 theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
   ∀p:nat, p.prime -> dvd n p -> contains f.factors p := by
   match f with
@@ -1041,87 +909,10 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
     clear xs_complete
     rw [ndef] at pdvd
     
-    match pdvd.prime pprime with
-    | .inl _ =>
-      have ⟨ xprime_def, _ ⟩  := nprimes.left p
-      match xprime_def with
-      | .inr (.inl _) => 
-        have := nat.prime_ne_one pprime
-        contradiction
-      | .inr (.inr _) => contradiction
-      | .inl _ => contradiction
-    | .inr _ =>
-      assumption
+    have xprime := nprimes.left
+    exact dvd.prime.cancel_left xprime pprime x_ne_p pdvd
 
 #print axioms PrimeFactorization.is_complete
-    
-
-    -- unfold contains
-    -- simp
-    -- match Compare.dec_eq p x with
-    -- | .isTrue p_eq_x =>
-    --   apply Or.inl
-    --   assumption
-    -- | .isFalse p_ne_x =>
-    --   apply Or.inr
-    --   apply factorization_is_complete (
-    --     PrimeFactorization.PrimeFactors xs nprimes.right (pop_sorted nsorted) (by rfl)
-    --   ) p pprime
-    --   rw [ndef] at pdvd
-    --   have ⟨ y, prf ⟩ := pdvd
-    --   simp at prf
-
-    --   have xprime := nprimes.left
-    --   match (xprime p).left with
-    --   | .inr (.inl _) =>
-    --     have := nat.prime_ne_one pprime
-    --     contradiction
-    --   | .inr (.inr _) =>
-    --     have := Ne.symm p_ne_x
-    --     contradiction
-    --   | .inl not_dvd_xp =>
-
-    --   match (pprime x).left with
-    --   | .inr (.inl _) =>
-    --     have := nat.prime_ne_one xprime
-    --     contradiction
-    --   | .inr (.inr _) =>
-    --     have := Ne.symm p_ne_x
-    --     contradiction
-    --   | .inl not_dvd_px =>
-      
-
-
-
-    -- admit
-
-
--- theorem biggest_prime_factor (n: nat) (n_gt_one: nat.zero.inc < n) : ∃p: nat, p.prime ∧ dvd n p ∧ ∀q:nat, q.prime -> dvd n q -> q <= p := by
---   have factorization := n.factorize (nat.lt_trans (nat.zero_lt_inc _) n_gt_one)
---   match h:factorization with
---   | .PrimeFactors nfactors nprimes nsorted ndef =>
---   match nfactors with
---   | [] =>
---     simp at ndef
---     rw [ndef] at n_gt_one
---     contradiction
---   | p::ns => 
---   exists p
---   apply And.intro
---   exact nprimes.left
---   apply And.intro
---   have := all_factors_dvd factorization
---   unfold PrimeFactorization.factors at this
---   simp at this
---   exact apply_all this p (by
---     rw [h]
---     simp
---     unfold contains
---     apply Or.inl; rfl)
---   intro q qprime qdvd
---   clear h
-  
---   admit
 
 theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
   match a with
@@ -1177,4 +968,4 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
     simp at this
     exact this
 
--- #print axioms PrimeFactorization.unique
+#print axioms PrimeFactorization.unique

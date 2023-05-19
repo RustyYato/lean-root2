@@ -676,18 +676,18 @@ theorem gcd.bounded_imp_eq : ∀a b, gcd a b = gcd.bounded_imp (nat.add a b).inc
 theorem gcd.bounded_eq : ∀a b, gcd a b = gcd.bounded a b := 
   fun a b => gcd.bounded_imp_eq a b
 
-def coprime a b := gcd.bounded a b = nat.zero.inc
+def nat.coprime a b := gcd.bounded a b = nat.zero.inc
 
-theorem coprime.gcd (c: coprime a b) : gcd a b = nat.zero.inc := by  
+theorem nat.coprime.to_gcd (c: nat.coprime a b) : gcd a b = nat.zero.inc := by  
   rw [gcd.bounded_eq]
   assumption
 
-instance : Decidable (coprime a b) := by
-  unfold coprime
+instance : Decidable (nat.coprime a b) := by
+  unfold nat.coprime
   apply nat.compare_eq
 
 -- check that coprime is reducible
-example : coprime nat.zero.inc.inc.inc nat.zero.inc.inc.inc.inc := by decide
+example : nat.coprime nat.zero.inc.inc.inc nat.zero.inc.inc.inc.inc := by decide
 
 theorem gcd.zero_left: gcd nat.zero a = a := by 
   unfold gcd
@@ -945,7 +945,7 @@ theorem gcd.of_dvd_mul :
     assumption
   }
 
-theorem gcd.mul : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c) := by
+theorem gcd.mul_left : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c) := by
   have ⟨ dvd_ab, dvd_ac ⟩  := gcd.is_dvd (nat.mul a b) (nat.mul a c)
   have ⟨ dvd_b, dvd_c ⟩  := gcd.is_dvd b c
 
@@ -974,3 +974,10 @@ theorem gcd.mul : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c) := by
     have ⟨ x, prf ⟩ := dvd_ac
     exists x
   }
+
+theorem nat.coprime.comm (c: nat.coprime a b) : nat.coprime b a := by
+  unfold nat.coprime
+  rw [←gcd.bounded_eq]
+  rw [gcd.comm]
+  rw [gcd.bounded_eq]
+  assumption
