@@ -643,38 +643,7 @@ theorem gcd.of_divis :
     assumption
   }
 
--- theorem gcd.is_divis a b : 
---   divisible a (gcd a b) ∧ divisible b (gcd a b) := by
---   apply And.intro
---   apply @gcd.induction (fun a b => divisible a (gcd a b))
---   {
---     intro a
---     exact divisible.zero _
---   }
---   {
---     intro a b a_gt_zero prev
---     unfold gcd
---     cases a
---     contradiction
---     simp
---     apply divisible.trans _ prev
---     clear prev
-
---     admit
---   }
---   admit
-
--- theorem gcd.to_divis a b : 
---   divisible (gcd a b) c ->
---   divisible a c ∧ 
---   divisible b c := by
---   have ⟨ divis_a, divis_b ⟩ := gcd.is_divis a b
---   intro divis_gcd
---   apply And.intro
---   apply divisible.trans divis_a divis_gcd
---   apply divisible.trans divis_b divis_gcd
-
-theorem gcd.to_divis a b c : 
+theorem gcd.to_divis {a b c} : 
   divisible (gcd a b) c ->
   divisible a c ∧ 
   divisible b c := by
@@ -703,3 +672,7 @@ theorem gcd.to_divis a b c :
     apply divisible.mul
     assumption
   }
+
+theorem gcd.is_divis a b : 
+  divisible a (gcd a b) ∧ divisible b (gcd a b) := 
+    gcd.to_divis (divisible.id _)
