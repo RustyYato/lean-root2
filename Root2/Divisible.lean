@@ -75,7 +75,7 @@ theorem dvd.to_ne : (∃ x, dvd a x ≠ dvd b x) -> a ≠ b := by
   contradiction
 
 
-theorem dvd.ab_eq_ba_implies_eq : dvd a b -> dvd b a -> a = b := by
+theorem dvd.to_eq : dvd a b -> dvd b a -> a = b := by
   intro dvd_ab dvd_ba
   have ⟨ x, prf₀ ⟩ := dvd_ab
   have ⟨ y, prf₁ ⟩ := dvd_ba

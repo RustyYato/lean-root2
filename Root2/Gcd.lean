@@ -248,7 +248,7 @@ theorem Gcd.comm (f: Gcd a b) (r: Gcd b a) : f.eval = r.eval := by
   have dvd_r_f := Gcd.dvd_implies r f.eval dvd_b_f dvd_a_f
   have dvd_f_r := Gcd.dvd_implies f r.eval dvd_a_r dvd_b_r
   
-  exact dvd.ab_eq_ba_implies_eq dvd_f_r dvd_r_f
+  exact dvd.to_eq dvd_f_r dvd_r_f
 
 theorem gcd.comm (a b: nat) : gcd a b = gcd b a := by
   apply Gcd.comm
@@ -282,7 +282,7 @@ theorem Gcd.assoc (g: Gcd a b) (h: Gcd b c) (i: Gcd g.eval c) (j: Gcd a h.eval) 
   have dvd_i_j := Gcd.dvd_implies i j.eval dvd_g_j dvd_c_j
   clear dvd_g_j dvd_a_j dvd_b_j dvd_c_j
 
-  exact dvd.ab_eq_ba_implies_eq dvd_i_j dvd_j_i
+  exact dvd.to_eq dvd_i_j dvd_j_i
 
 theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
   apply Eq.symm
@@ -403,7 +403,7 @@ theorem gcd.eq_zero : (gcd a b = nat.zero) = (a = nat.zero ∧ b = nat.zero) := 
   apply Gcd.eq_zero
 
 theorem Gcd.dvd_by_left (g: Gcd a b) (d: dvd a b): g.eval = b := by
-  apply dvd.ab_eq_ba_implies_eq
+  apply dvd.to_eq
   exact Gcd.dvd_implies g b d (dvd.id _)
   exact (Gcd.implies_dvd g (dvd.id _)).right
 
@@ -411,7 +411,7 @@ theorem gcd.dvd_by_left (d: dvd a b) : gcd a b = b :=
   by apply Gcd.dvd_by_left _ d
 
 theorem Gcd.dvd_by_right (g: Gcd a b) (d: dvd b a): g.eval = a := by
-  apply dvd.ab_eq_ba_implies_eq
+  apply dvd.to_eq
   exact Gcd.dvd_implies g a (dvd.id _) d
   exact (Gcd.implies_dvd g (dvd.id _)).left
 
@@ -435,7 +435,7 @@ theorem gcd.repeat_left : gcd (gcd a b) b = gcd a b :=
   by apply Gcd.repeat_left
 
 theorem Gcd.eval_eq (g: Gcd a b) (h: Gcd c d) (a_eq_c: a = c) (b_eq_d: b = d) : g.eval = h.eval := by
-  apply dvd.ab_eq_ba_implies_eq
+  apply dvd.to_eq
 
   have ⟨ c_dvd_h, d_dvd_h ⟩  := h.implies_dvd (dvd.id _)
   rw [dvd.eq a_eq_c.symm rfl] at c_dvd_h
@@ -479,7 +479,7 @@ theorem gcd.gcd_eq_implies_dvd_left : (gcd a b = a) = dvd b a := by
   rw [gcd.comm]
   apply Gcd.eq_implies_dvd
   intro dvd_b_a
-  apply dvd.ab_eq_ba_implies_eq
+  apply dvd.to_eq
   apply gcd.dvd_implies
   exact dvd.id _
   assumption
@@ -609,7 +609,7 @@ theorem Gcd.gt_one_implies_gcd_mul_gt_one
 -- -- theorem gcd.left_cancel : 
 -- --   coprime k n -> gcd (nat.mul k m) n = gcd m n := by
 -- --   intro cp_k_n
--- --   apply dvd.ab_eq_ba_implies_eq
+-- --   apply dvd.to_eq
 -- --   exists k
 
 

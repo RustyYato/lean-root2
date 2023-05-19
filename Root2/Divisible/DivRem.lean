@@ -195,5 +195,5 @@ theorem dvd.from_ne : a ≠ b -> (∃ x, dvd a x ≠ dvd b x) := by
     have := dvd_eq_dvd.mp (dvd.id _)
     contradiction
   | .isTrue b_dvd_a =>
-  have := dvd.ab_eq_ba_implies_eq a_dvd_b b_dvd_a
+  have := dvd.to_eq a_dvd_b b_dvd_a
   contradiction

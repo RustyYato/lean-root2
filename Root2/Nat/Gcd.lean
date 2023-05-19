@@ -680,7 +680,7 @@ theorem gcd.is_dvd a b :
 theorem gcd.comm : gcd a b = gcd b a := by 
   have ⟨ a_ab, b_ab ⟩  := gcd.is_dvd a b
   have ⟨ a_ba, b_ba ⟩  := gcd.is_dvd b a
-  apply dvd.ab_eq_ba_implies_eq <;> apply gcd.of_dvd <;> assumption
+  apply dvd.to_eq <;> apply gcd.of_dvd <;> assumption
 
 theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
   have ⟨ _, bc ⟩  := gcd.is_dvd a (gcd b c)
@@ -693,19 +693,19 @@ theorem gcd.assoc : gcd a (gcd b c) = gcd (gcd a b) c := by
   have _ := dvd.trans a_ab ab
   have _ := dvd.trans b_ab ab
 
-  apply dvd.ab_eq_ba_implies_eq
+  apply dvd.to_eq
   repeat any_goals apply gcd.of_dvd
   all_goals assumption
 
 theorem gcd.one_left : gcd nat.zero.inc a = nat.zero.inc := by
   have ⟨ dvd_one, _ ⟩   := gcd.is_dvd nat.zero.inc a 
-  apply dvd.ab_eq_ba_implies_eq
+  apply dvd.to_eq
   exact dvd.one _
   assumption
 
 theorem gcd.one_right : gcd a nat.zero.inc = nat.zero.inc := by
   have ⟨ _, dvd_one ⟩   := gcd.is_dvd a nat.zero.inc
-  apply dvd.ab_eq_ba_implies_eq
+  apply dvd.to_eq
   exact dvd.one _
   assumption
 
