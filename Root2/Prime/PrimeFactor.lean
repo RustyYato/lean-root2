@@ -103,9 +103,8 @@ theorem singleton_list_is_sorted [Compare α] {a: α} : [a].sorted := by simp
 
 theorem list_concat_sorted_fst [Compare α] {{ a b : α }} (b_lt_a: b < a) : a :: (List.concat_sorted as (b::bs)) = List.concat_sorted (a::as) (b::bs) := by
   simp
-  rw [Compare.flip]
-  rw [b_lt_a]
-  simp
+  have : Compare.ord a b = Order.Greater := Compare.flip b_lt_a
+  rw [this]
 
 theorem list_concat_sorted_snd [Compare α] {{ a b : α }} (a_lt_b: a < b) : b :: (List.concat_sorted (a::as) bs) = List.concat_sorted (a::as) (b::bs)  := by
   simp
@@ -160,8 +159,7 @@ mutual
     exact aas_sorted.left
     apply list_sorted_fst_snd_nonempty
     apply Or.inl
-    rw [Compare.ord_flip]
-    assumption
+    exact Compare.flip h
     exact aas_sorted.right
     exact bbs_sorted
   theorem list_sorted_snd_fst_nonempty [Compare α] {{ a b : α }} {{ as : List α }} (a_le_b: a <= b) (aas_sorted : (a :: as).sorted) (bbs_sorted : (b :: bs).sorted) :
@@ -200,10 +198,8 @@ mutual
       exact bbs_sorted.right
     assumption
     apply list_sorted_fst_snd_nonempty
-    rw [Compare.ord_flip] at h
-    simp at h
     apply Or.inl
-    assumption
+    exact Compare.flip h
     exact aas_sorted
     exact bbs_sorted.right
 end
@@ -242,9 +238,7 @@ theorem concat_sorted_comm
     simp
     apply concat_sorted_comm <;> (apply pop_sorted; assumption)
     next a_lt_b => {
-      rw [Compare.ord_flip] at a_lt_b
-      simp at a_lt_b
-      rw [a_lt_b]
+      rw [Compare.flip a_lt_b]
       simp
       apply concat_sorted_comm
       assumption
@@ -252,9 +246,7 @@ theorem concat_sorted_comm
       assumption
     }
     next a_gt_b => {
-      rw [Compare.ord_flip] at a_gt_b
-      simp at a_gt_b
-      rw [a_gt_b]
+      rw [Compare.flip a_gt_b]
       simp
       apply concat_sorted_comm
       apply pop_sorted
@@ -292,7 +284,7 @@ by
       assumption
       simp
       apply Or.inl
-      rw [Compare.ord_flip]
+      apply Compare.of_flip
       assumption
     }
   | a :: as, b :: bs =>
@@ -325,7 +317,7 @@ by
     {
       apply list_sorted_fst_snd_nonempty
       apply Or.inl
-      rw [Compare.ord_flip]
+      apply Compare.of_flip
       assumption
       assumption
       assumption

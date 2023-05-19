@@ -529,6 +529,23 @@ decreasing_by {
   apply remainder.lt b a₀.inc
 }
 
+def remainder.bounded (x a b: nat): nat.zero < b -> nat := match x with
+  | .zero => fun _ => a
+  | .inc x₀ =>
+  fun zero_lt_b =>
+    match Compare.dec_lt a b with
+    | .isTrue _ => a
+    | .isFalse _ => remainder.bounded x₀ (a.saturating_sub b) b zero_lt_b
+
+@[reducible]
+def gcd.bounded (x a b: nat) : nat :=
+  match x with
+  | .zero => .zero
+  | .inc x₀ => 
+      match h:a with
+    | .zero => b
+    | .inc a₀ => gcd.bounded x₀ (remainder.bounded (nat.inc b) b a (by rw [h]; apply nat.zero_lt_inc)) a
+
 def gcd.induction { P: nat -> nat -> Prop } :
   (∀a, P nat.zero a) ->
   (∀a b h, P (remainder b a h) a -> P a b) ->
@@ -543,6 +560,19 @@ def gcd.induction { P: nat -> nat -> Prop } :
   }
 
 def coprime a b := gcd a b = nat.zero.inc
+
+@[reducible]
+def gcd.bounded_run a b := gcd.bounded (nat.add a b).inc a b
+
+#eval gcd.bounded_run nat.zero.inc.inc.inc nat.zero.inc.inc.inc.inc.inc.inc
+#eval gcd nat.zero.inc nat.zero
+#reduce gcd.bounded_run nat.zero.inc nat.zero
+
+theorem check : gcd.bounded_run nat.zero.inc nat.zero = nat.zero.inc := by decide
+
+instance : Decidable (coprime a b) := by
+  unfold coprime
+  apply nat.compare_eq
 
 theorem gcd.zero_left: gcd nat.zero a = a := by 
   unfold gcd
@@ -800,7 +830,7 @@ theorem gcd.of_dvd_mul :
     assumption
   }
 
-theorem gcd.mul : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c)  := by
+theorem gcd.mul : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c) := by
   have ⟨ dvd_ab, dvd_ac ⟩  := gcd.is_dvd (nat.mul a b) (nat.mul a c)
   have ⟨ dvd_b, dvd_c ⟩  := gcd.is_dvd b c
 

@@ -135,9 +135,7 @@ theorem dvd.prime {{ a b c: nat }} (cprime: c.prime) :
     apply Or.inl
     exact dvd.id _
   | .Greater =>
-    have c_lt_a : c < a := by 
-      rw [Compare.ord_flip] at h₀
-      exact h₀
+    have c_lt_a : c < a := Compare.flip h₀
     have := dvd.mul_sub_left dvd_ab_c (Or.inl c_lt_a) 
     match this.prime cprime with
     | .inl x =>
@@ -156,9 +154,7 @@ theorem dvd.prime {{ a b c: nat }} (cprime: c.prime) :
     rw [b_eq_c]
     exact dvd.id _
   | .Greater =>
-    have c_lt_b : c < b := by 
-      rw [Compare.ord_flip] at h₁
-      exact h₁
+    have c_lt_b : c < b := Compare.flip h₁
     clear h₁
     have := dvd.mul_sub_right dvd_ab_c (Or.inl c_lt_b)
     match this.prime cprime with

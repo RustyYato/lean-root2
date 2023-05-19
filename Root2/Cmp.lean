@@ -10,12 +10,16 @@ def Order.flip_less : Order.Less.flip = Order.Greater := rfl
 def Order.flip_greater : Order.Greater.flip = Order.Less := rfl
 @[simp]
 def Order.flip_eq : Order.Eq.flip = Order.Eq := rfl
+def Order.swap_flip {a b: Order} : a.flip = b -> a = b.flip := fun _ => match a, b with
+| .Less, .Greater 
+| .Eq, .Eq 
+| .Greater, .Less => rfl
 
 class Compare (α: Sort _) where
   ord (_ _: α) : Order
 
   ord_transitive {{ o: Order }} (_: ord a b = o) (_: ord b c = o) : (ord a c = o)
-  ord_flip {{ o: Order }} : (ord a b = o) = (ord b a = o.flip)
+  ord_flip : (ord a b) = (ord b a).flip
 
   ord_id : (ord a a = Order.Eq) 
   ord_implies_eq (_: ord a b = Order.Eq) : a = b
@@ -95,7 +99,7 @@ def Compare.ord_ne_transitive {{ α: Sort _ }} [Compare α] {{ a b c : α }} {{ 
               | .Greater => contradiction
         | .Greater => contradiction
 
-def Order.flip_flip (o: Order) : o = o.flip.flip := by
+def Order.flip_flip (o: Order) : o.flip.flip = o := by
   cases o <;> simp
 
 def Compare.ord_not_less {{ α: Sort _ }} [Compare α] {{ a b : α }} (ord_ab: ord a b ≠ Order.Less) : (ord a b = Order.Greater) ∨ (ord a b = Order.Eq) := by
@@ -116,18 +120,23 @@ def Compare.ord_not_greater {{ α: Sort _ }} [Compare α] {{ a b : α }} (ord_ab
   apply Or.inr; rfl
   contradiction
 
-def Compare.flip {{ α: Sort _ }} [Compare α] {{ a b : α }} : ord a b = (ord b a).flip := by
-  cases h:ord a b  <;> (
-    rw [Compare.ord_flip] at h
-    rw [h]
-    rfl
-  )
+def Compare.flip {{ α: Sort _ }} [Compare α] {{ a b : α }} {o: Order} : ord a b = o -> ord b a = o.flip := by
+  intro ord_ab
+  rw [Compare.ord_flip] at ord_ab
+  exact Order.swap_flip ord_ab
+
+def Compare.of_flip {{ α: Sort _ }} [Compare α] {{ a b : α }} {o: Order} : ord a b = o.flip -> ord b a = o := by
+  intro ord_ab
+  have ord_ab := Compare.flip ord_ab
+  rw [Order.flip_flip] at ord_ab
+  exact ord_ab
 
 def Compare.ord_flip_ne {{ α: Sort _ }} [Compare α] {{ a b : α }} {{ o: Order }} (ord_ab: ord a b ≠ o) : (ord b a ≠ o.flip) := by
   intro ord_ba
   rw [ord_flip] at ord_ba
-  simp at ord_ba
-  cases o <;> contradiction
+  cases o <;> cases h:ord a b
+  any_goals contradiction
+  any_goals (rw [h] at ord_ba; contradiction)
 
 def Compare.ord_from_eq {{ α: Sort _ }} [Compare α] {{ a b : α }} : a = b -> ord a b = Order.Eq := by
   intro a_eq_b
@@ -140,8 +149,8 @@ def Compare.ord_implies_lt {{ α: Sort _ }} [Compare α] {{ a b: α }}
 
 def Compare.ord_implies_gt {{ α: Sort _ }} [Compare α] {{ a b: α }}
   (a_gt_b: ord a b = Order.Greater) : a > b := by
-  rw [ord_flip] at a_gt_b
-  exact a_gt_b
+  have a_gt_b := Compare.flip a_gt_b
+  exact Compare.ord_implies_lt a_gt_b
 
 def Compare.ord_implies_ge {{ α: Sort _ }} [Compare α] {{ a b: α }}
   (a_ge_b: ord a b ≠ Order.Less) : a >= b := by
@@ -269,10 +278,9 @@ theorem Compare.not_lt_and_le [Compare α] (a b: α) : a < b -> b <= a -> False 
   simp at a_lt_b
   match b_le_a  with
   | .inl b_le_a => 
-    rw [Compare.ord_flip] at b_le_a
+    have b_le_a := Compare.flip b_le_a
     rw [b_le_a] at a_lt_b
     contradiction
   | .inr b_eq_a =>
     rw [Compare.ord_symm _ _ b_eq_a] at a_lt_b
     contradiction
-
