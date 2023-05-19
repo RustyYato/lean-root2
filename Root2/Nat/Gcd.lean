@@ -751,3 +751,81 @@ theorem gcd.dvd_left : (gcd a b = b) = dvd a b := by
 theorem gcd.dvd_right : (gcd a b = a) = dvd b a := by
   rw [gcd.comm]
   apply gcd.dvd_left
+
+theorem gcd.of_dvd_mul : 
+  ∀ {a b},
+  dvd (nat.mul f a) c ->
+  dvd (nat.mul f b) c ->
+  dvd (nat.mul f (gcd a b)) c := by
+  apply gcd.induction
+  {
+    intro a
+    intro _ dvd_a_c
+    rw [gcd.zero_left]
+    assumption
+  }
+  {
+    match f with
+    | .zero =>
+      intro a b zero_lt_a _ _ _
+      rw [nat.mul_zero]
+      exact dvd.zero _
+    | .inc f₀ =>
+    intro a b zero_lt_a prev dvd_a_c dvd_b_c
+    unfold gcd
+    cases a
+    contradiction
+    simp
+    apply prev
+    clear prev
+    {
+      rw [←remainder.mul]
+      have ⟨ x, prfx ⟩ := dvd_a_c
+      have ⟨ y, prfy ⟩ := dvd_b_c
+      exists remainder y x (by
+        match x with
+        | .zero =>
+          rw [nat.mul_zero_r] at prfx
+          contradiction
+        | .inc _ => apply nat.zero_lt_inc)
+      rw [prfy]
+      conv => {
+        lhs
+        lhs
+        rw [prfx]
+      }
+      rw [remainder.mul]
+      simp; apply nat.zero_lt_inc
+    }
+    assumption
+  }
+
+theorem gcd.mul : gcd (nat.mul a b) (nat.mul a c) = nat.mul a (gcd b c)  := by
+  have ⟨ dvd_ab, dvd_ac ⟩  := gcd.is_dvd (nat.mul a b) (nat.mul a c)
+  have ⟨ dvd_b, dvd_c ⟩  := gcd.is_dvd b c
+
+  apply dvd.to_eq
+  {
+    apply gcd.of_dvd
+    have ⟨ x, prf ⟩ := dvd_b
+    exists x
+    conv => {
+      lhs
+      rw [prf]
+    }
+    rw [nat.mul_perm0]
+    have ⟨ x, prf ⟩ := dvd_c
+    exists x
+    conv => {
+      lhs
+      rw [prf]
+    }
+    rw [nat.mul_perm0]
+  }
+  {
+    apply gcd.of_dvd_mul
+    have ⟨ x, prf ⟩ := dvd_ab
+    exists x
+    have ⟨ x, prf ⟩ := dvd_ac
+    exists x
+  }
