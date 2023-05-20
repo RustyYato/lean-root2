@@ -394,31 +394,34 @@ theorem nat.distribute_terms :
     rw [nat.mul_comm a]
   }
 
-theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
-  ∀p:nat, p.prime -> dvd n p -> contains f.factors p := by
-  match f with
-  | .PrimeFactors nfactors nprimes nsorted ndef =>
+axiom Test: False
+
+theorem PrimeFactorization.is_complete_raw 
+  {n}
+  (nfactors: List nat) (nprimes: nfactors.allP nat.prime) (ndef: n = list_product nfactors)
+ : ∀p:nat, p.prime -> dvd n p -> contains nfactors p := by
   intro p pprime pdvd
   match nfactors with
   | [] => 
-    simp at ndef
+    simp only at ndef
     rw [ndef] at pdvd
     have p_le_one := pdvd.is_le (nat.zero_lt_inc _)
     have p_gt_one := nat.prime_gt_one pprime
     have := Compare.not_lt_and_le _ _ p_gt_one p_le_one
     contradiction
   | [x] =>
-    simp
+    unfold contains
+    apply Or.inl
+    unfold list_product at ndef
     simp at ndef
     rw [nat.mul_one_r] at ndef
     rw [ndef] at pdvd
     have xprime := nprimes.left
     match (xprime p).left with
     | .inl _ => contradiction
-    | .inr (.inl _) =>
-      have := nat.prime_ne_one pprime
-      contradiction
-    | .inr (.inr x_eq_p) => rw [x_eq_p]
+    | .inr (.inl h) => 
+      exact ((nat.prime_ne_one pprime) h).elim
+    | .inr (.inr h) => exact h.symm
   | x::xs =>
     simp
     match Compare.dec_eq x p with
@@ -428,13 +431,16 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
       rfl
     | .isFalse x_ne_p =>
     apply Or.inr
-    have xs_complete := (PrimeFactorization.PrimeFactors xs nprimes.right (concat_sorted.pop nsorted) (by rfl)).is_complete
-    apply xs_complete p pprime
-    clear xs_complete
+    apply PrimeFactorization.is_complete_raw xs nprimes.right rfl p pprime
     rw [ndef] at pdvd
-    
     have xprime := nprimes.left
     exact dvd.prime.cancel_left xprime pprime x_ne_p pdvd
+
+theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
+  ∀p:nat, p.prime -> dvd n p -> contains f.factors p := 
+  match f with
+  | .PrimeFactors nfactors nprimes _ ndef => PrimeFactorization.is_complete_raw 
+    nfactors nprimes ndef
 
 #print axioms PrimeFactorization.is_complete
 
