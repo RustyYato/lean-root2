@@ -119,6 +119,15 @@ theorem nat.not_le_is_sym_lt {{ a b: nat }} : (¬(a <= b)) = (b < a) := by
     | nat.zero => simp
     | nat.inc b₀ => simp; exact @nat.not_le_is_sym_lt a₀ b₀
 
+def P : nat → nat -> Prop := fun a b => match a, b with
+| nat.inc a, nat.inc b => a = b
+| _, _     => true
+
+theorem nat.eq_inc_to_eq {m n : nat} (h : nat.inc m = nat.inc n) : m = n := by
+  have h₁ : P (nat.inc  m) (nat.inc  m) := rfl
+  have h₂ : P (nat.inc m) (nat.inc n) := h ▸ h₁
+  exact h₂
+
 theorem nat.eq_inc_irr : (nat.inc a = nat.inc b) = (a = b) := by
   simp
 
