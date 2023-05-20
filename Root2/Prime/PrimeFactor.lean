@@ -3,8 +3,6 @@ import Root2.Prime.Factors
 import Root2.Prime.Divisible
 import Root2.SortedList
 
-axiom Test: False
-
 instance nat_gt_one {n: nat} : nat.zero.inc < nat.inc (nat.inc n) := by
   rw [nat.lt_inc_irr]
   apply nat.zero_lt_inc
@@ -530,7 +528,7 @@ theorem PrimeFactorization.unique_raw
         match b with
         | .zero => 
           have := bprimes.left
-          contradiction
+          exact (nat.prime_implies_not_composite this zero_composite).elim
         | .inc b₀ =>
           apply nat.zero_lt_inc
       )
