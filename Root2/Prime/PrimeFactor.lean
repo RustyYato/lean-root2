@@ -394,8 +394,6 @@ theorem nat.distribute_terms :
     rw [nat.mul_comm a]
   }
 
-axiom Test: False
-
 theorem PrimeFactorization.is_complete_raw 
   {n}
   (nfactors: List nat) (nprimes: nfactors.allP nat.prime) (ndef: n = list_product nfactors)
@@ -444,11 +442,40 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
 
 #print axioms PrimeFactorization.is_complete
 
-theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
-  match a with
-  | .PrimeFactors afactors aprimes asorted adef =>
-  match b with
-  | .PrimeFactors bfactors bprimes bsorted bdef =>
+axiom Test: False
+
+def sorted_max [Compare α] {x:α} {xs: List α} (xsorted: (x::xs).sorted) : ∀y, contains (x::xs) y -> y <= x := by
+  intro y xs_contains
+  match xs_contains with
+  | .inl y_eq_x => apply Or.inr (Compare.ord_from_eq y_eq_x)
+  | .inr xs_contains =>
+  match xs with
+  | [] => contradiction
+  | x'::xs' =>
+    have y_le_x' := sorted_max (concat_sorted.pop xsorted) y xs_contains
+    apply Compare.le_trans y_le_x'
+    exact xsorted.left
+
+def nat.biggest_prime_factor (f: PrimeFactorization n) : f.factors = x :: xs ->
+  x.prime ∧ ∀y, y.prime -> dvd n y -> y <= x
+  := by
+    match f with
+    | .PrimeFactors nfactors nprimes nsorted ndef =>
+    intro factors
+    simp at factors
+    rw [factors] at nprimes nsorted ndef
+    clear factors nfactors f
+    apply And.intro
+    exact nprimes.left
+    intro y yprime ydvd
+    have is_complete := PrimeFactorization.is_complete_raw (x::xs) nprimes ndef
+    exact sorted_max nsorted y (is_complete y yprime ydvd)
+
+theorem PrimeFactorization.unique_raw
+  {n}
+  (afactors: List nat) (aprimes: afactors.allP nat.prime) (asorted: afactors.sorted) (adef: n = list_product afactors)
+  (bfactors: List nat) (bprimes: bfactors.allP nat.prime) (bsorted: bfactors.sorted) (bdef: n = list_product bfactors)
+  : afactors = bfactors := by
   simp
   match afactors, bfactors with
   | [], [] => rfl
@@ -470,18 +497,18 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
   | a::as, b::bs =>
     simp
     have a_eq_b : a = b := by
-      have asorted_def := sorted_def asorted
-      have bsorted_def := sorted_def bsorted
       have aprime := aprimes.left
       have bprime := bprimes.left
-      admit
+      have ⟨ _, aprf ⟩  := nat.biggest_prime_factor (.PrimeFactors (a::as) aprimes asorted adef) rfl
+      have ⟨ _, bprf ⟩  := nat.biggest_prime_factor (.PrimeFactors (b::bs) bprimes bsorted bdef) rfl
+      have b_le_a := aprf b bprime (by exists list_product bs)
+      have a_le_b := bprf a aprime (by exists list_product as)
+      exact nat.le_le_to_eq a_le_b b_le_a
     apply And.intro
     exact a_eq_b
     simp at adef
-    have := PrimeFactorization.unique (
-      .PrimeFactors as aprimes.right (concat_sorted.pop asorted) (by rfl)
-    ) (
-      .PrimeFactors bs bprimes.right (concat_sorted.pop bsorted) (by 
+    exact PrimeFactorization.unique_raw  as aprimes.right (concat_sorted.pop asorted) rfl
+        bs bprimes.right (concat_sorted.pop bsorted) (by 
         rw [adef] at bdef
         simp at bdef
         rw [a_eq_b] at bdef
@@ -494,8 +521,15 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
         | .inc b₀ =>
           apply nat.zero_lt_inc
       )
-    )
-    simp at this
-    exact this
+
+#print axioms PrimeFactorization.unique_raw
+
+theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
+  match a with
+  | .PrimeFactors afactors aprimes asorted adef =>
+  match b with
+  | .PrimeFactors bfactors bprimes bsorted bdef =>
+  congr
+  exact PrimeFactorization.unique_raw afactors aprimes asorted adef bfactors bprimes bsorted bdef
 
 #print axioms PrimeFactorization.unique
