@@ -555,3 +555,5 @@ theorem PrimeFactorization.of_eq (a: PrimeFactorization a') (b: PrimeFactorizati
   rw [as_eq_bs] at adef
   rw [←bdef] at adef
   assumption
+
+#print axioms PrimeFactorization.of_eq
