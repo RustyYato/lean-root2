@@ -53,6 +53,21 @@ theorem List.sub_seq.tail {a: α} {as: List α} : as.sub_seq (a::as) := by
 
 #print axioms List.sub_seq.tail
 
+theorem List.sub_seq.not_tail {a: α} {as: List α} : ¬ (a::as).sub_seq as := by
+  intro ss
+  match as with
+  | [] => contradiction
+  | a::as =>
+    unfold List.sub_seq at ss
+    simp at ss
+    match ss with
+    | .inl h =>
+      exact List.sub_seq.not_tail h.right
+    | .inr h =>
+      exact List.sub_seq.not_tail h.pop
+
+#print axioms List.sub_seq.not_tail
+
 instance sub_seq.dec [DecidableEq α] (a b : List α) : Decidable (a.sub_seq b) := match a with
   | [] => Decidable.isTrue (by simp)
   | a'::as' => match b with
@@ -130,3 +145,34 @@ def List.sub_seq.trans {a b c: List αs} : a.sub_seq b -> b.sub_seq c -> a.sub_s
         exact ab.trans bc.pop
 
 #print axioms List.sub_seq.trans
+
+def List.sub_seq.to_eq { a b: List α } : a.sub_seq b -> b.sub_seq a -> a = b := by
+  intro a_sub_b b_sub_a
+  match a, b with
+  | [], [] => rfl
+  | a'::as, b'::bs =>
+  unfold List.sub_seq at a_sub_b b_sub_a
+  simp at a_sub_b b_sub_a
+  match a_sub_b, b_sub_a with
+  | .inl ⟨ _ , _ ⟩, .inl ⟨ _ , _ ⟩ =>
+    congr
+    apply List.sub_seq.to_eq <;> assumption
+  | .inr h, .inl ⟨ _, _ ⟩  =>
+    congr
+    apply Eq.symm
+    assumption
+    apply List.sub_seq.to_eq
+    exact h.pop
+    assumption
+  | .inl ⟨ _, _ ⟩, .inr h =>
+    congr
+    apply List.sub_seq.to_eq
+    assumption
+    exact h.pop
+  | .inr ha, .inr hb =>
+    have : sub_seq as (a'::as) := List.sub_seq.tail
+    have := (hb.trans this).trans ha
+    have := List.sub_seq.not_tail this
+    contradiction
+
+#print axioms List.sub_seq.to_eq
