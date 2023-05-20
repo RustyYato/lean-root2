@@ -3,6 +3,8 @@ import Root2.Prime.Factors
 import Root2.Prime.Divisible
 import Root2.SortedList
 
+axiom Test: False
+
 instance nat_gt_one {n: nat} : nat.zero.inc < nat.inc (nat.inc n) := by
   rw [nat.lt_inc_irr]
   apply nat.zero_lt_inc
@@ -176,15 +178,21 @@ theorem list_product_eq_one : list_product as = nat.zero.inc -> as.allP (λ a =>
     apply list_product_eq_one
     exact r
 
+def zero_composite : nat.composite nat.zero := ⟨ nat.zero.inc.inc, .inl (⟨ ⟨ .zero, rfl ⟩ , fun x => nat.noConfusion (nat.eq_inc_to_eq x), nat.noConfusion ⟩ ) ⟩ 
+def one_composite : nat.composite nat.zero.inc := ⟨ nat.zero.inc.inc, .inr rfl ⟩ 
+
 theorem primes_gt_one {{a:nat}}{{as: List nat}} (all_primes: (a::as).allP nat.prime) : nat.zero.inc < list_product (a::as) := by
   match h:(list_product (a::as)) with
   | .zero =>
     have some_zero := list_product_eq_zero h
-    have not_zero := List.mapAllP all_primes (by
+    have not_zero : List.allP (a::as) (λx => x ≠ .zero) := List.mapAllP all_primes (by
       intro x xprime
       match Compare.dec_eq x nat.zero with
-      | .isTrue x_one => rw [x_one] at xprime; contradiction
-      | .isFalse not_one => exact not_one)
+      | .isTrue x_zero => 
+        rw [x_zero] at xprime
+        exact (nat.prime_implies_not_composite xprime zero_composite).elim
+      | .isFalse not_one => exact not_one
+      )
     have := List.any_and_not_all not_zero some_zero
     contradiction
   | .inc .zero => 
@@ -192,13 +200,17 @@ theorem primes_gt_one {{a:nat}}{{as: List nat}} (all_primes: (a::as).allP nat.pr
     have no_ones := List.mapAllP all_primes (by
       intro x xprime
       match Compare.dec_eq x nat.zero.inc with
-      | .isTrue x_one => rw [x_one] at xprime; contradiction
+      | .isTrue x_one =>  
+        rw [x_one] at xprime
+        exact (nat.prime_implies_not_composite xprime one_composite).elim
       | .isFalse not_one => exact not_one)
     have := List.all_and_not_all no_ones all_ones
     contradiction
   | .inc (.inc x₀) =>
     rw [nat.lt_inc_irr]
     exact nat.zero_lt_inc _
+
+#print axioms primes_gt_one
 
 theorem sorted_def [Compare α] {{ a: α }} (as_sorted: (a :: as).sorted) : as.allP (fun x => x <= a) := by
   match as with
@@ -442,8 +454,6 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
 
 #print axioms PrimeFactorization.is_complete
 
-axiom Test: False
-
 def sorted_max [Compare α] {x:α} {xs: List α} (xsorted: (x::xs).sorted) : ∀y, contains (x::xs) y -> y <= x := by
   intro y xs_contains
   match xs_contains with
@@ -455,6 +465,8 @@ def sorted_max [Compare α] {x:α} {xs: List α} (xsorted: (x::xs).sorted) : ∀
     have y_le_x' := sorted_max (concat_sorted.pop xsorted) y xs_contains
     apply Compare.le_trans y_le_x'
     exact xsorted.left
+
+#print axioms sorted_max
 
 def nat.biggest_prime_factor (f: PrimeFactorization n) : f.factors = x :: xs ->
   x.prime ∧ ∀y, y.prime -> dvd n y -> y <= x
@@ -471,6 +483,8 @@ def nat.biggest_prime_factor (f: PrimeFactorization n) : f.factors = x :: xs ->
     have is_complete := PrimeFactorization.is_complete_raw (x::xs) nprimes ndef
     exact sorted_max nsorted y (is_complete y yprime ydvd)
 
+#print axioms nat.biggest_prime_factor
+
 theorem PrimeFactorization.unique_raw
   {n}
   (afactors: List nat) (aprimes: afactors.allP nat.prime) (asorted: afactors.sorted) (adef: n = list_product afactors)
@@ -480,7 +494,6 @@ theorem PrimeFactorization.unique_raw
   match afactors, bfactors with
   | [], [] => rfl
   | [], b::bs =>
-    have bprime := bprimes.left
     have := primes_gt_one bprimes
     simp at adef
     rw [adef] at bdef
