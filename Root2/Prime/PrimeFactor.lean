@@ -1,7 +1,7 @@
 import Root2.Prime
 import Root2.Prime.Factors
 import Root2.Prime.Divisible
-import Root2.SortedList
+import Root2.SortedList.Concat
 
 instance nat_gt_one {n: nat} : nat.zero.inc < nat.inc (nat.inc n) := by
   rw [nat.lt_inc_irr]
