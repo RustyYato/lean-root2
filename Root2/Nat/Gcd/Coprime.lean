@@ -42,3 +42,30 @@ theorem nat.prime.to_coprime_or_eq (pn: nat.prime n) (pm: nat.prime m) : nat.cop
   | .inl _ => contradiction
 
 #print axioms nat.prime.to_coprime_or_eq
+
+theorem gcd.coprime (cp_a_c: nat.coprime a c) : ∀x, nat.coprime (gcd x c) a := by
+  intro x
+  unfold nat.coprime at cp_a_c
+  unfold nat.coprime
+  rw [←gcd.bounded_eq] at cp_a_c
+  rw [←gcd.bounded_eq]
+  rw [←gcd.assoc, gcd.comm c a]
+  rw [cp_a_c, gcd.one_right]
+
+theorem gcd.coprime.cancel_left (cp: nat.coprime a c): gcd (nat.mul a b) c = gcd b c := by
+  have H : nat.coprime (gcd (nat.mul a b) c) a := gcd.coprime cp _
+  apply dvd.to_eq
+  have ⟨ ⟨ x, prf ⟩, _ ⟩  := gcd.is_dvd b c
+  apply gcd.of_dvd
+  exists x.mul a
+  rw [nat.mul_perm9]
+  rw [←prf]
+  assumption
+  have ⟨ left, _ ⟩  := gcd.is_dvd (nat.mul a b) c
+  apply gcd.of_dvd
+  exact nat.coprime.cancel_left H.comm left
+  assumption
+
+theorem gcd.coprime.cancel_right (cp: nat.coprime b c): gcd (nat.mul a b) c = gcd a c := by
+  rw [nat.mul_comm]
+  apply gcd.coprime.cancel_left cp

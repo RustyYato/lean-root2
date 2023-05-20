@@ -822,7 +822,7 @@ theorem gcd.is_dvd a b :
   dvd a (gcd a b) ∧ dvd b (gcd a b) := 
     gcd.to_dvd (dvd.id _)
 
-theorem gcd.comm : gcd a b = gcd b a := by 
+theorem gcd.comm a b : gcd a b = gcd b a := by 
   have ⟨ a_ab, b_ab ⟩  := gcd.is_dvd a b
   have ⟨ a_ba, b_ba ⟩  := gcd.is_dvd b a
   apply dvd.to_eq <;> apply gcd.of_dvd <;> assumption
