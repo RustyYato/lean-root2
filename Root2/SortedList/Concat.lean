@@ -88,14 +88,6 @@ theorem concat_sorted.empty_right [Compare α] {{as: List α}} : List.concat_sor
 
 #print axioms concat_sorted.empty_right
 
-theorem concat_sorted.pop [Compare α] {{a: α}} {{as: List α}} : (a::as).sorted -> as.sorted := by
-  intro list_sorted
-  match as with
-  | [] => trivial
-  | a₀::as₀ => exact list_sorted.right
-
-#print axioms concat_sorted.pop
-
 theorem concat_sorted.singleton_list_is_sorted [Compare α] {a: α} : [a].sorted := by simp
 
 #print axioms concat_sorted.singleton_list_is_sorted
@@ -336,7 +328,7 @@ theorem concat_sorted.comm
       simp
       apply concat_sorted.comm
       assumption
-      apply pop; assumption
+      apply sorted.pop; assumption
     }
     {
       rw [Compare.flip h]; simp
@@ -345,12 +337,12 @@ theorem concat_sorted.comm
       assumption
       apply And.intro
       exact this.symm
-      apply concat_sorted.comm <;> (apply pop; assumption)
+      apply concat_sorted.comm <;> (apply sorted.pop; assumption)
     }
     {
       rw [Compare.flip h]; simp
       apply concat_sorted.comm
-      apply pop; assumption
+      apply sorted.pop; assumption
       assumption
     }
 termination_by concat_sorted.comm => alist.length + blist.length

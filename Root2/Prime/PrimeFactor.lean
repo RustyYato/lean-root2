@@ -243,7 +243,7 @@ theorem all_factors_dvd (f: PrimeFactorization n) : f.factors.allP (λ x => dvd 
   | f::fs =>
     apply And.intro
     exists (list_product fs)
-    have := all_factors_dvd (.PrimeFactors fs fprimes.right (concat_sorted.pop fsorted) (by rfl))
+    have := all_factors_dvd (.PrimeFactors fs fprimes.right (sorted.pop fsorted) (by rfl))
     simp at this
     apply List.mapAllP this
     intro x xf
@@ -460,7 +460,7 @@ def sorted_max [Compare α] {x:α} {xs: List α} (xsorted: (x::xs).sorted) : ∀
   match xs with
   | [] => contradiction
   | x'::xs' =>
-    have y_le_x' := sorted_max (concat_sorted.pop xsorted) y xs_contains
+    have y_le_x' := sorted_max (sorted.pop xsorted) y xs_contains
     apply Compare.le_trans y_le_x'
     exact xsorted.left
 
@@ -518,8 +518,8 @@ theorem PrimeFactorization.unique_raw
     apply And.intro
     exact a_eq_b
     simp at adef
-    exact PrimeFactorization.unique_raw  as aprimes.right (concat_sorted.pop asorted) rfl
-        bs bprimes.right (concat_sorted.pop bsorted) (by 
+    exact PrimeFactorization.unique_raw  as aprimes.right (sorted.pop asorted) rfl
+        bs bprimes.right (sorted.pop bsorted) (by 
         rw [adef] at bdef
         simp at bdef
         rw [a_eq_b] at bdef

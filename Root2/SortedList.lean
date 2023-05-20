@@ -85,3 +85,22 @@ def List.sorted [Compare α] (list: List α) : Prop := match list with
   | a :: b :: xs => b <= a ∧ sorted (b :: xs)
 
 #print axioms List.sorted
+
+theorem sorted.pop [Compare α] {{a: α}} {{as: List α}} : (a::as).sorted -> as.sorted := by
+  intro list_sorted
+  match as with
+  | [] => trivial
+  | a₀::as₀ => exact list_sorted.right
+
+#print axioms sorted.pop
+
+theorem sorted.pop_snd [Compare α] {{a: α}} {{as: List α}} : (a::a'::as).sorted -> (a::as).sorted := by
+  intro list_sorted
+  match as with
+  | [] => trivial
+  | a₀::as' =>
+    apply And.intro
+    apply Compare.le_trans list_sorted.right.left list_sorted.left
+    exact list_sorted.right.right
+
+#print axioms sorted.pop_snd
