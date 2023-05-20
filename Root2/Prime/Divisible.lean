@@ -111,6 +111,8 @@ theorem dvd.prime.cancel_left {{ a b c: nat }} (aprime: a.prime) (cprime: c.prim
   | .inl cp_a_c =>
   exact cp_a_c.cancel_left d
 
+#print axioms dvd.prime.cancel_left
+
 theorem dvd.prime {{ a b c: nat }} (cprime: c.prime) :
   dvd (nat.mul a b) c -> dvd a c ∨ dvd b c := by
   intro dvd_ab_c

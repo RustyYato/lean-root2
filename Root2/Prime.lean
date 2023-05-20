@@ -281,18 +281,42 @@ instance nat.not_composite_implies_prime {{n:nat}} (p: ¬ nat.composite n) : nat
   | .Prime prime _ => exact prime
   | .Composite _ composite => contradiction
 
+def nat.prime_ne_zero {{n: nat}} (p: nat.prime n) : n ≠ nat.zero := by
+  intro n_eq_zero
+  have ⟨ prf, _ ⟩ := p nat.zero.inc.inc
+  rw [n_eq_zero] at prf
+  match prf with
+  | .inl h =>
+    have := h (dvd.zero _)
+    contradiction
+  | .inr (.inl h) =>
+    have := nat.eq_inc_to_eq h
+    contradiction
+  | .inr (.inr h) => 
+    contradiction
+
+#print axioms nat.prime_ne_zero
+
+def nat.prime_ne_one {{n: nat}} (p: nat.prime n) : n ≠ nat.zero.inc := by
+  intro n_eq_one
+  have ⟨ _, _ ⟩ := p nat.zero
+  contradiction
+
+#print axioms nat.prime_ne_one
+
 theorem nat.prime_gt_one (p: nat.prime n) : nat.zero.inc < n := by
+  have := nat.prime_ne_zero p
+  have := nat.prime_ne_one p
+  clear p
   match n with
-  | .zero => contradiction
-  | .inc .zero => contradiction
-  | .inc (.inc n') => trivial
+  | .inc (.inc _) => trivial
 
-def nat.prime_gt_zero {{n: nat}} (_: nat.prime n) : nat.zero < n := match n with
-  | nat.inc _ => nat.zero_lt_inc _
+#print axioms nat.prime_gt_one
 
-def nat.prime_ne_zero {{n: nat}} (_: nat.prime n) : n ≠ nat.zero := match n with
-  | nat.inc (.inc _) => by simp
+def nat.prime_gt_zero {{n: nat}} (p: nat.prime n) : nat.zero < n := by
+  have := nat.prime_ne_zero p
+  clear p
+  match n with
+  | .inc _ => trivial
 
-def nat.prime_ne_one {{n: nat}} (_: nat.prime n) : n ≠ nat.zero.inc := match n with
-  | nat.inc (.inc _) => by simp
-    
+#print axioms nat.prime_gt_zero

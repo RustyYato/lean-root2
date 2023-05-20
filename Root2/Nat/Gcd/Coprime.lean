@@ -8,9 +8,13 @@ theorem nat.coprime.cancel_left (cp: nat.coprime a c) (d: dvd (nat.mul a b) c) :
       gcd.comm, cp.to_gcd, nat.mul_one_r] at g
   assumption
 
+#print axioms nat.coprime.cancel_left
+
 theorem nat.coprime.cancel_right (cp: nat.coprime b c) (d: dvd (nat.mul a b) c) : dvd a c := by
   rw [nat.mul_comm] at d
   apply cp.cancel_left d
+
+#print axioms nat.coprime.cancel_right
 
 theorem nat.prime.to_coprime_or_dvd (p: nat.prime n) : ∀m, nat.coprime n m ∨ dvd m n := by
   intro m
@@ -26,6 +30,8 @@ theorem nat.prime.to_coprime_or_dvd (p: nat.prime n) : ∀m, nat.coprime n m ∨
     rw [n_eq_gcd]
     assumption
 
+#print axioms nat.prime.to_coprime_or_dvd
+
 theorem nat.prime.to_coprime_or_eq (pn: nat.prime n) (pm: nat.prime m) : nat.coprime n m ∨ n = m := by
   cases nat.prime.to_coprime_or_dvd pn m
   apply Or.inl
@@ -34,3 +40,5 @@ theorem nat.prime.to_coprime_or_eq (pn: nat.prime n) (pm: nat.prime m) : nat.cop
   | .inr (.inr m_eq_n) => exact Or.inr m_eq_n.symm
   | .inr (.inl gcd_eq_one) => exact ((nat.prime_ne_one pn) gcd_eq_one).elim
   | .inl _ => contradiction
+
+#print axioms nat.prime.to_coprime_or_eq
