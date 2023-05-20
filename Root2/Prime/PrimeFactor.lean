@@ -1,476 +1,16 @@
 import Root2.Prime
 import Root2.Prime.Factors
 import Root2.Prime.Divisible
+import Root2.SortedList
 
 instance nat_gt_one {n: nat} : nat.zero.inc < nat.inc (nat.inc n) := by
   rw [nat.lt_inc_irr]
   apply nat.zero_lt_inc
 
 @[simp]
-def contains (as: List α) (a: α) : Prop := match as with
-  | [] => False
-  | x :: xs => a = x ∨ contains xs a
-
-@[simp]
 def list_product (list: List nat) : nat := match list with
   | [] => nat.zero.inc
   | n :: ns => nat.mul n (list_product ns)
-
-@[simp]
-def List.allP  (list: List a) (P : a -> Prop) : Prop := match list with
-  | [] => True
-  | x :: xs => P x ∧ allP xs P
-
-@[simp]
-def List.anyP (list: List a) (P : a -> Prop) : Prop := match list with
-  | [] => False
-  | x :: xs => P x ∨ anyP xs P
-
-@[simp]
-def List.mapAllP {{list: List a}} {{ P R: a -> Prop }} (all: list.allP P) (F: ∀a, P a -> R a) : list.allP R := by
-  match list with
-  | [] => trivial
-  | x :: xs =>
-    simp
-    apply And.intro
-    exact F x all.left
-    exact List.mapAllP all.right F
-
-@[simp]
-def List.mapAnyP {{list: List a}} {{ P R: a -> Prop }} (any: list.anyP P) (F: ∀a, P a -> R a) : list.anyP R := by
-  match list with
-  | [] => trivial
-  | x :: xs =>
-    simp
-    match any with
-    | .inl prf => exact .inl (F x prf)
-    | .inr prf => exact .inr (List.mapAnyP prf F)
-
-@[simp]
-def List.any_and_not_all {{list: List a}} {{ P: a -> Prop }} (not_all: list.allP fun x => ¬ P x) (any: list.anyP P) : False := by
-  match list with
-  | [] => trivial
-  | x :: xs =>
-    simp
-    match any with
-    | .inl prf => 
-      have not_p := not_all.left
-      contradiction
-    | .inr prf => 
-      apply any_and_not_all not_all.right prf
-
-@[simp]
-def List.all_and_not_all {{list: List a}} {{ P: a -> Prop }} (not_all: list.allP fun x => ¬ P x) (all: list.allP P) : list = [] := by
-  match list with
-  | [] => rfl
-  | x :: xs =>
-    simp
-    have not_p := not_all.left
-    have p := all.left
-    contradiction
-
-@[simp]
-def List.sorted_by (list: List a) (P : a -> a -> Prop) : Prop := match list with
-  | [] | [_] => True
-  | a :: b :: xs => P a b ∧ sorted_by (b :: xs) P
-
-@[simp]
-def List.sorted [Compare α] (list: List α) : Prop := match list with
-  | [] | [_] => True
-  | a :: b :: xs => b <= a ∧ sorted (b :: xs)
-
-@[simp]
-def List.concat_sorted [Compare α] (a b: List α) : List α := match a with
-| [] => b
-| a₀::as => match b with
-| [] => a₀::as
-| b₀::bs => match Compare.ord a₀ b₀ with
-| .Eq => a₀ :: b₀ :: as.concat_sorted bs
-| .Less => b₀::(List.concat_sorted (a₀::as) bs)
-| .Greater => a₀::(List.concat_sorted as (b₀::bs))
-termination_by List.concat_sorted a b => a.length + b.length
-decreasing_by {
-  simp_wf
-  try {
-    rw [Nat.add_succ, Nat.add_comm (Nat.succ _), Nat.add_succ, Nat.add_comm]
-    next ys => {
-      generalize length xs + length ys = l
-      exact Nat.lt_trans (Nat.lt_succ_self l) (Nat.lt_succ_self (Nat.succ l))
-    }
-  }
-  try {
-    rw [Nat.add_succ]
-    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
-    apply Nat.succ_lt_succ
-    apply Nat.lt_succ_self
-  }
-  try {
-    rw [Nat.add_succ]
-    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
-    apply Nat.succ_lt_succ
-    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
-    apply Nat.lt_succ_self
-  }
-}
-
-theorem list_concat_sorted_empty_left [Compare α] {{as: List α}} : List.concat_sorted as [] = as := by
-  cases as <;> simp
-
-theorem list_concat_sorted_empty_right [Compare α] {{as: List α}} : List.concat_sorted [] as = as := by
-  cases as <;> simp
-
-theorem pop_sorted [Compare α] {{a: α}} {{as: List α}} : (a::as).sorted -> as.sorted := by
-  intro list_sorted
-  match as with
-  | [] => trivial
-  | a₀::as₀ => exact list_sorted.right
-
-theorem singleton_list_is_sorted [Compare α] {a: α} : [a].sorted := by simp
-
-theorem list_concat_sorted_fst [Compare α] {{ a b : α }} (b_lt_a: b < a) : a :: (List.concat_sorted as (b::bs)) = List.concat_sorted (a::as) (b::bs) := by
-  simp
-  have : Compare.ord a b = Order.Greater := Compare.flip b_lt_a
-  rw [this]
-
-theorem list_concat_sorted_snd [Compare α] {{ a b : α }} (a_lt_b: a < b) : b :: (List.concat_sorted (a::as) bs) = List.concat_sorted (a::as) (b::bs)  := by
-  simp
-  rw [a_lt_b]
-
-theorem list_sorted_snd_fst_empty [Compare α] {{ b : α }} (bbs_sorted : (b :: bs).sorted) :
-  List.sorted (b :: List.concat_sorted [] bs) := by
-  simp
-  assumption
-
-theorem list_sorted_fst_snd_empty [Compare α] {{ a : α }} (aas_sorted : (a :: as).sorted) :
-  List.sorted (a :: List.concat_sorted as []) := by
-  rw [list_concat_sorted_empty_left]
-  assumption
-
-mutual
-  theorem list_sorted_fst_snd_nonempty [Compare α] {{ a b : α }} {{ as : List α }} (b_le_a: b <= a) (aas_sorted : (a :: as).sorted) (bbs_sorted : (b :: bs).sorted) :
-    List.sorted (a :: List.concat_sorted as (b :: bs)) := by
-    match as with
-    | [] => 
-      simp
-      apply And.intro
-      assumption
-      assumption
-    | a' :: as' =>
-    simp
-    cases h:Compare.ord a' b <;> simp 
-    repeat any_goals apply And.intro
-    assumption
-    apply list_sorted_snd_fst_nonempty
-    apply Or.inl
-    assumption
-    exact aas_sorted.right
-    assumption
-    exact aas_sorted.left
-    apply Or.inr
-    apply Compare.ord_symm
-    assumption
-    have a'_eq_b : a' = b := Compare.ord_implies_eq h
-    match bs with
-    | [] =>
-      apply list_sorted_fst_snd_empty
-      rw [←a'_eq_b]
-      exact aas_sorted.right
-    | b'::bs' =>
-      rw [←a'_eq_b]
-      apply list_sorted_fst_snd_nonempty
-      rw [a'_eq_b]
-      exact bbs_sorted.left
-      exact aas_sorted.right
-      exact bbs_sorted.right
-    exact aas_sorted.left
-    apply list_sorted_fst_snd_nonempty
-    apply Or.inl
-    exact Compare.flip h
-    exact aas_sorted.right
-    exact bbs_sorted
-  theorem list_sorted_snd_fst_nonempty [Compare α] {{ a b : α }} {{ as : List α }} (a_le_b: a <= b) (aas_sorted : (a :: as).sorted) (bbs_sorted : (b :: bs).sorted) :
-    List.sorted (b :: List.concat_sorted (a :: as) bs) := by
-    match bs with
-    | [] => 
-      simp
-      apply And.intro
-      assumption
-      assumption
-    | b' :: bs' =>
-    simp
-    cases h:Compare.ord a b' <;> simp 
-    repeat any_goals apply And.intro
-    exact bbs_sorted.left
-    apply list_sorted_snd_fst_nonempty
-    apply Or.inl; assumption
-    assumption
-    exact bbs_sorted.right
-    assumption
-    apply Or.inr
-    apply Compare.ord_symm
-    assumption
-    match as with
-    | [] =>
-      apply list_sorted_snd_fst_empty
-      exact bbs_sorted.right
-    | a'::as' => 
-      apply list_sorted_snd_fst_nonempty
-      have a_eq_b' : a = b' := by
-        apply Compare.ord_implies_eq
-        assumption
-      rw [←a_eq_b']
-      exact aas_sorted.left
-      exact aas_sorted.right
-      exact bbs_sorted.right
-    assumption
-    apply list_sorted_fst_snd_nonempty
-    apply Or.inl
-    exact Compare.flip h
-    exact aas_sorted
-    exact bbs_sorted.right
-end
-  termination_by
-    list_sorted_fst_snd_nonempty => as.length + bs.length
-    list_sorted_snd_fst_nonempty => as.length + bs.length
-  decreasing_by {
-    simp_wf
-    try {
-      apply Nat.add_lt_add_right
-      apply Nat.lt_succ_self
-    }
-    try {
-      apply Nat.add_lt_add_left
-      apply Nat.lt_succ_self
-    }
-    try {
-      apply Nat.add_lt_add <;>
-      apply Nat.lt_succ_self
-    }
-  }
-
-theorem concat_sorted_empty_left [Compare α] (a_list: List α) : List.concat_sorted [] a_list = a_list := by
-  cases a_list <;> simp
-
-theorem concat_sorted_empty_right [Compare α] (a_list: List α) : List.concat_sorted a_list [] = a_list := by
-  cases a_list <;> simp
-
-@[simp]
-def len_le_than_two (list: List a) : Prop := match list with
-  | [] | [_] | [_, _] => True
-  | _ => False
-
-theorem concat_sorted_comm 
-  [Compare α]
-  {{alist blist: List α}}
-  (a_sorted: alist.sorted) (b_sorted: blist.sorted)
-  : alist.concat_sorted blist = blist.concat_sorted alist := by
-  unfold List.concat_sorted
-  match alist, blist with
-  | [], x => simp; cases x <;> rfl
-  | x, [] => simp; cases x <;> rfl
-  | a::as, b::bs => 
-    simp
-    cases h:Compare.ord a b <;> simp
-    {
-      rw [Compare.flip h]
-      simp
-      apply concat_sorted_comm
-      assumption
-      apply pop_sorted; assumption
-    }
-    {
-      rw [Compare.flip h]; simp
-      have : a = b := Compare.ord_implies_eq h
-      apply And.intro
-      assumption
-      apply And.intro
-      exact this.symm
-      apply concat_sorted_comm <;> (apply pop_sorted; assumption)
-    }
-    {
-      rw [Compare.flip h]; simp
-      apply concat_sorted_comm
-      apply pop_sorted; assumption
-      assumption
-    }
-termination_by concat_sorted_comm => alist.length + blist.length
-decreasing_by {
-  simp_wf
-  
-  try {
-    rw [Nat.add_succ]
-    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
-    apply Nat.succ_lt_succ
-    apply Nat.lt_succ_self
-  }
-  try {
-    rw [Nat.add_succ]
-    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
-    apply Nat.succ_lt_succ
-    rw [Nat.add_comm (Nat.succ _), Nat.add_succ]
-    apply Nat.lt_succ_self
-  }
-  try {
-    apply Nat.add_lt_add <;> (apply Nat.lt_succ_self)
-  }
-}
-
-theorem concat_sorted_keeps_sorted
-  [inst: Compare α]
-  (alist blist: List α)
-  (a_sorted: alist.sorted) (b_sorted: blist.sorted)
-  : (alist.concat_sorted blist).sorted := 
-by
-  match h₁:alist, h₂:blist with
-  | [], _ => simp; assumption
-  | _, [] => unfold List.concat_sorted; split; assumption; exact a_sorted
-  | [a], [b] =>
-    unfold List.concat_sorted
-    split
-    assumption
-    next a' ns list_a_eq => {
-      match ns with 
-      | _ :: _ => simp at list_a_eq
-      | [] => 
-      simp at list_a_eq
-      rw [←list_a_eq]
-      rw [list_concat_sorted_empty_left]
-      rw [list_concat_sorted_empty_left]
-      rw [list_concat_sorted_empty_right]
-      split
-      simp
-      apply Or.inr
-      apply Compare.ord_symm
-      assumption
-      simp
-      apply Or.inl
-      assumption
-      simp
-      apply Or.inl
-      apply Compare.of_flip
-      assumption
-    }
-  | a :: as, b :: bs =>
-    simp
-    cases h:Compare.ord a b <;> simp
-    {
-      apply list_sorted_snd_fst_nonempty
-      apply Or.inl
-      assumption
-      assumption
-      assumption
-    }
-    {
-      apply And.intro
-      {
-        apply Or.inr
-        apply Compare.ord_symm
-        assumption
-      }
-      match as with
-      | [] => apply list_sorted_snd_fst_empty; assumption
-      | a'::as' =>
-        apply list_sorted_snd_fst_nonempty
-        have a_eq_b := Compare.ord_implies_eq h
-        rw [←a_eq_b]
-        exact a_sorted.left
-        exact a_sorted.right
-        assumption
-    }
-    {
-      apply list_sorted_fst_snd_nonempty
-      apply Or.inl
-      apply Compare.of_flip
-      assumption
-      assumption
-      assumption
-    }
-
-theorem concat_sorted_all [Compare α] {{alist blist: List α}} {{P : α -> Prop}} :
-  (alist.allP P) -> (blist.allP P) ->
-  (alist.concat_sorted blist).allP P := by
-  intro allA allB
-  match alist, blist with
-  | [], _ =>
-    rw [concat_sorted_empty_left]
-    assumption
-  | _, [] =>
-    rw [concat_sorted_empty_right]
-    assumption
-  | a::as, b::bs =>
-  simp
-  cases h:Compare.ord a b <;> simp
-  repeat any_goals apply And.intro
-  exact allB.left
-  apply concat_sorted_all allA allB.right
-  exact allA.left
-  exact allB.left
-  apply concat_sorted_all allA.right allB.right
-  exact allA.left
-  apply concat_sorted_all allA.right allB
-termination_by concat_sorted_all => (alist, blist)
-
-theorem concat_sorted_any [Compare α] {{alist blist: List α}} {{P : α -> Prop}} :
-  (alist.anyP P) ∨ (blist.anyP P) ->
-  (alist.concat_sorted blist).anyP P := by
-  intro anyA_or_anyB
-  match alist, blist with
-  | [], _ =>
-    rw [concat_sorted_empty_left]
-    match anyA_or_anyB with
-    | .inr _ => assumption
-  | _, [] =>
-    rw [concat_sorted_empty_right]
-    match anyA_or_anyB with
-    | .inl _ => assumption
-  | a::as, b::bs =>
-  simp
-  cases h:Compare.ord a b <;> simp
-  repeat any_goals apply And.intro
-  match anyA_or_anyB with
-  | .inl anyA =>
-    apply Or.inr
-    apply concat_sorted_any
-    apply Or.inl
-    assumption
-  | .inr (.inl anyB) =>
-    exact .inl anyB
-  | .inr (.inr anyB) =>
-    apply Or.inr
-    apply concat_sorted_any
-    apply Or.inr
-    assumption
-  match anyA_or_anyB with
-  | .inl (.inl anyA) =>
-    exact .inl anyA
-  | .inl (.inr anyA) =>
-    apply Or.inr
-    apply Or.inr
-    apply concat_sorted_any
-    apply Or.inl
-    assumption
-  | .inr (.inl anyB) =>
-    exact Or.inr (Or.inl anyB)
-  | .inr (.inr anyB) =>
-    apply Or.inr
-    apply Or.inr
-    apply concat_sorted_any
-    apply Or.inr
-    assumption
-  match anyA_or_anyB with
-  | .inr anyB =>
-    apply Or.inr
-    apply concat_sorted_any
-    apply Or.inr
-    assumption
-  | .inl (.inl anyA) =>
-    exact .inl anyA
-  | .inl (.inr anyA) =>
-    apply Or.inr
-    apply concat_sorted_any
-    apply Or.inl
-    assumption
-termination_by concat_sorted_any => (alist, blist)
 
 theorem one_not_dvd_prime : ∀ p, p.prime -> ¬ dvd nat.zero.inc p := by
   intro p pprime dvd_one_p
@@ -507,7 +47,7 @@ theorem mul_sorted_list_products (a_no_zeros: alist.allP not_zero) (b_no_zeros: 
   match alist, blist with
   | [], _ => simp; rw [nat.add_zero_r]
   | _, [] =>
-    rw [concat_sorted_empty_right]
+    rw [concat_sorted.empty_left]
     simp
     rw [nat.mul_one_r]
   | a::as, b::bs =>
@@ -554,85 +94,6 @@ theorem all_implies {{ α: Type _ }} {{ A B: α -> Prop }} :
   exact (A_to_B _ Ax)
   exact all_implies xs Axs A_to_B
 
-theorem concat_sorted_preserves_all {{ α: Type _ }} [Compare α] {{ P: α -> Prop }} {{alist blist: List α}} :
-  (List.allP alist P) -> (List.allP blist P) -> (List.allP (alist.concat_sorted blist) P) := by
-  intro all_a all_b
-  
-  match alist, blist with
-  | [], _ => simp; assumption
-  | _, [] =>
-    rw [list_concat_sorted_empty_left]
-    assumption
-  | a :: as, b :: bs =>
-    simp
-    cases h:Compare.ord a b <;> simp
-    repeat any_goals apply And.intro
-    exact all_b.left
-    {
-      apply concat_sorted_preserves_all
-      assumption
-      exact all_b.right  
-    }
-    exact all_a.left
-    exact all_b.left
-    {
-      apply concat_sorted_preserves_all
-      exact all_a.right
-      exact all_b.right
-    }
-    exact all_a.left
-    {
-      apply concat_sorted_preserves_all
-      exact all_a.right
-      exact all_b
-    }
-  termination_by concat_sorted_preserves_all => (alist, blist)
-
-theorem concat_preserves_all {{ α: Type _ }} {{ P: α -> Prop }} {{a b: List α}} :
-  (List.allP a P) -> (List.allP b P) -> (List.allP (a ++ b) P) := by
-  intro all_a all_b
-  match a with
-  | [] => simp; assumption
-  | a₀ :: as =>
-    have ⟨ pa, pas ⟩ := all_a
-    simp
-    apply And.intro
-    assumption
-    apply concat_preserves_all
-    assumption
-    assumption
-
-theorem concat_preserves_any {{ α: Type _ }} {{ P: α -> Prop }} {{a b: List α}} :
-  (List.anyP a P) ∨ (List.anyP b P) -> (List.anyP (a ++ b) P) := by
-  intro all_a_or_all_b
-  match all_a_or_all_b with
-  | .inl any_a =>
-    match a with
-    | [] => contradiction
-    | a₀ :: as =>
-      match any_a with
-      | .inl any_a₀ => 
-        apply Or.inl
-        assumption
-      | .inr any_as => 
-        apply Or.inr
-        apply concat_preserves_any
-        apply Or.inl
-        assumption
-  | .inr any_b =>
-    match b with
-    | [] => contradiction
-    | b₀ :: bs =>
-      match a with
-      | [] =>
-        simp
-        assumption
-      | a :: as =>
-        apply Or.inr
-        apply concat_preserves_any
-        apply Or.inr
-        assumption
-
 def PrimeFactorization.to_list (p: PrimeFactorization n) : List nat := match p with
   | .PrimeFactors factors _ _ _ => factors
 
@@ -647,8 +108,8 @@ def PrimeFactorization.merge {{a b: nat}}
   | .PrimeFactors a_products a_primes a_sorted a_product, .PrimeFactors b_products b_primes b_sorted b_product =>
     apply PrimeFactorization.PrimeFactors (a_products.concat_sorted b_products)
 
-    apply concat_sorted_preserves_all <;> assumption
-    apply concat_sorted_keeps_sorted <;> assumption
+    apply concat_sorted.all <;> assumption
+    apply concat_sorted.keeps_sorted <;> assumption
     {
       rw [a_product, b_product]
       apply mul_sorted_list_products
@@ -772,7 +233,7 @@ theorem all_factors_dvd (f: PrimeFactorization n) : f.factors.allP (λ x => dvd 
   | f::fs =>
     apply And.intro
     exists (list_product fs)
-    have := all_factors_dvd (.PrimeFactors fs fprimes.right (pop_sorted fsorted) (by rfl))
+    have := all_factors_dvd (.PrimeFactors fs fprimes.right (concat_sorted.pop fsorted) (by rfl))
     simp at this
     apply List.mapAllP this
     intro x xf
@@ -853,7 +314,7 @@ theorem force_contains [Compare α] {{alist blist: List α}} (anot: ¬ contains 
     simp
     assumption
   | _, [] =>
-    rw [concat_sorted_empty_right]
+    rw [concat_sorted.empty_left]
     assumption
   | a::as, b::bs =>
     simp
@@ -967,7 +428,7 @@ theorem PrimeFactorization.is_complete (f: PrimeFactorization n) :
       rfl
     | .isFalse x_ne_p =>
     apply Or.inr
-    have xs_complete := (PrimeFactorization.PrimeFactors xs nprimes.right (pop_sorted nsorted) (by rfl)).is_complete
+    have xs_complete := (PrimeFactorization.PrimeFactors xs nprimes.right (concat_sorted.pop nsorted) (by rfl)).is_complete
     apply xs_complete p pprime
     clear xs_complete
     rw [ndef] at pdvd
@@ -1012,9 +473,9 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
     exact a_eq_b
     simp at adef
     have := PrimeFactorization.unique (
-      .PrimeFactors as aprimes.right (pop_sorted asorted) (by rfl)
+      .PrimeFactors as aprimes.right (concat_sorted.pop asorted) (by rfl)
     ) (
-      .PrimeFactors bs bprimes.right (pop_sorted bsorted) (by 
+      .PrimeFactors bs bprimes.right (concat_sorted.pop bsorted) (by 
         rw [adef] at bdef
         simp at bdef
         rw [a_eq_b] at bdef
