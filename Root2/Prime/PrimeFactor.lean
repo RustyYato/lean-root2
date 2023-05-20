@@ -544,3 +544,14 @@ theorem PrimeFactorization.unique (a b: PrimeFactorization n) : a = b := by
   exact PrimeFactorization.unique_raw afactors aprimes asorted adef bfactors bprimes bsorted bdef
 
 #print axioms PrimeFactorization.unique
+
+theorem PrimeFactorization.of_eq (a: PrimeFactorization a') (b: PrimeFactorization b') : a.factors = b.factors -> a' = b' := by
+  match a with
+  | .PrimeFactors afactors aprimes asorted adef =>
+  match b with
+  | .PrimeFactors bfactors bprimes bsorted bdef =>
+  intro as_eq_bs
+  simp at as_eq_bs
+  rw [as_eq_bs] at adef
+  rw [←bdef] at adef
+  assumption
