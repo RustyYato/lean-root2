@@ -155,7 +155,6 @@ instance nat.classify_prime : PrimeClassifier n := by
       -- zero is composite
       exists nat.zero.inc.inc
       simp
-      exists nat.zero
     }
   | nat.inc nat.zero =>
     apply PrimeClassifier.Composite
@@ -292,8 +291,7 @@ def nat.prime_ne_zero {{n: nat}} (p: nat.prime n) : n ≠ nat.zero := by
   | .inr (.inl h) =>
     have := nat.eq_inc_to_eq h
     contradiction
-  | .inr (.inr h) => 
-    contradiction
+  | .inr (.inr _) => contradiction
 
 #print axioms nat.prime_ne_zero
 

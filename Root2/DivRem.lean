@@ -61,6 +61,11 @@ def divrem.calc (a b: nat) (b_gt_0: nat.zero < b) : divrem a b := by
   simp at x
   assumption
 
+#print axioms divrem.calc
+
+def example_val := divrem.calc nat.zero.inc.inc.inc.inc.inc.inc.inc.inc.inc.inc.inc.inc.inc nat.zero.inc.inc.inc.inc.inc.inc.inc (nat.zero_lt_inc _)
+example : example_val.remainder = nat.zero.inc.inc.inc.inc.inc.inc := by decide
+
 inductive nat_divrem_fmt where
   | dr : nat -> nat -> nat_divrem_fmt
   deriving Repr

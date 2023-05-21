@@ -2,6 +2,7 @@ import Root2.Nat.Mul
 import Root2.Nat.Cmp
 import Root2.Nat.Mul.Cmp
 import Root2.Nat.Sub
+import Root2.Nat.Sub.Mul
 
 def dvd (a b: nat) : Prop := ∃ c, a = nat.mul b c
 
@@ -66,6 +67,9 @@ theorem dvd.mul (d: dvd a b): dvd (nat.mul a c) b := by
 theorem dvd.mul_left (a b: nat): dvd (nat.mul a b) b := by
   exists a
   rw [nat.mul_comm]
+
+theorem dvd.mul_right (a b: nat): dvd (nat.mul a b) a := by
+  exists b
 
 theorem dvd.not (nd: ¬ dvd a b) : not_dvd a b := by
   intro x a_eq_bx
@@ -150,3 +154,14 @@ theorem dvd.sat_sub : dvd a b -> dvd (a.saturating_sub b) b := by
   | .inc x₀ =>
     exists x₀
     rw [prf, nat.mul_inc_r, nat.sat_sub_add_inv2]
+
+theorem dvd.cancel_right : dvd (nat.add a b) c -> dvd b c -> dvd a c := by
+  intro d_ab_c d_b_c
+  have ⟨ x, prfx ⟩ := d_ab_c
+  have ⟨ y, prfy ⟩ := d_b_c
+  exists x.saturating_sub y
+  rw [prfy] at prfx
+  rw [nat.mul_sat_sub_left]
+  rw [←prfx]
+  rw [nat.add_comm,
+      nat.sat_sub_add_inv2]

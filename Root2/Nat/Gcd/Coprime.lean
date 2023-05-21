@@ -69,3 +69,13 @@ theorem gcd.coprime.cancel_left (cp: nat.coprime a c): gcd (nat.mul a b) c = gcd
 theorem gcd.coprime.cancel_right (cp: nat.coprime b c): gcd (nat.mul a b) c = gcd a c := by
   rw [nat.mul_comm]
   apply gcd.coprime.cancel_left cp
+
+theorem nat.coprime.no_common_dvd (cp: nat.coprime a b) : ∀x, nat.zero.inc < x -> dvd a x -> dvd b x -> False := by
+  intro x x_gt_zero dvd_a_x dvd_b_x
+  unfold nat.coprime at cp
+  rw [←gcd.bounded_eq] at cp
+  have := gcd.of_dvd dvd_a_x dvd_b_x
+  rw [cp] at this
+  have := dvd.to_eq (dvd.one _) this
+  rw [this] at x_gt_zero
+  contradiction

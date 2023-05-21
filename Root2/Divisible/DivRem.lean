@@ -197,3 +197,31 @@ theorem dvd.from_ne : a ≠ b -> (∃ x, dvd a x ≠ dvd b x) := by
   | .isTrue b_dvd_a =>
   have := dvd.to_eq a_dvd_b b_dvd_a
   contradiction
+
+instance dvd.dec a b : Decidable (dvd a b) := match a, b with
+| .zero, _ => Decidable.isTrue (dvd.zero _)
+| _, .inc .zero => Decidable.isTrue (dvd.one _)
+| .inc a₀, .zero => Decidable.isFalse (fun ⟨ x, prf ⟩  => by
+  rw [nat.mul_zero] at prf
+  contradiction
+  )
+| .inc a₀, .inc b₀ => by
+  have d := divrem.calc a₀.inc b₀.inc (nat.zero_lt_inc _)
+  match d.remainder.compare_eq .zero with
+  | .isTrue rem_eq_zero =>  
+    apply Decidable.isTrue
+    exists d.quocient
+    have := d.def
+    conv => {
+      lhs
+      rw [←this]
+    }
+    rw [rem_eq_zero]
+    rw [nat.add_zero, nat.mul_comm]
+  | .isFalse rem_ne_zero =>
+    apply Decidable.isFalse
+    intro dv
+    have := d.dvd_remainder dv
+    contradiction
+
+#print axioms dvd.dec
