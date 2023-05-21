@@ -86,3 +86,5 @@ theorem root2_is_irrational_given_coprime : ∀ a b: nat, nat.coprime a b -> (na
     exact this)
   
   exact cp.no_common_dvd nat.zero.inc.inc (nat.a_lt_inc_a _) dvd_a_two dvd_b_two
+
+#print axioms root2_is_irrational_given_coprime
