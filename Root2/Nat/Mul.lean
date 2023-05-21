@@ -64,7 +64,6 @@ theorem nat.mul_gt_one {{ a b: nat }} : nat.inc nat.zero < nat.mul a b -> nat.ze
     rw [nat.lt_inc_irr]
     exact nat.zero_lt_inc _
 
-
 theorem nat.mul_one (a: nat) : mul (inc zero) a = a := by
   unfold mul
   rw [nat.mul_zero a, nat.add_comm, nat.add_zero]
@@ -84,6 +83,19 @@ theorem nat.mul_inc_r (a b: nat) : mul a (inc b) = add a (mul a b) := by
     simp
     rw [nat.add_perm2, ←nat.add_perm0, nat.add_irr]
     apply nat.mul_inc_r
+
+theorem nat.mul_eq_id { a b: nat } : a = nat.mul a b -> a = nat.zero ∨ b = nat.zero.inc := by
+  intro a_eq_ab
+  match b with
+  | .zero => rw [nat.mul_zero_r] at a_eq_ab; exact Or.inl a_eq_ab
+  | .inc .zero => exact Or.inr rfl
+  | .inc (.inc b₀) =>
+    match a with
+    | .zero => exact Or.inl rfl
+    | .inc a₀ =>
+    rw [nat.mul_inc_r, nat.eq_add_const_irr, nat.mul_inc_r] at a_eq_ab
+    contradiction
+
 
 theorem nat.mul_irr_r {{a b c: nat}} : b = c -> mul a b = mul a c := by
   intro b_eq_c

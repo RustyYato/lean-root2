@@ -225,3 +225,10 @@ instance dvd.dec a b : Decidable (dvd a b) := match a, b with
     contradiction
 
 #print axioms dvd.dec
+
+
+theorem mul_div_inv (dr: divrem a b) (d: dvd a b) : nat.mul b dr.quocient = a := by
+  
+  admit
+
+#print axioms mul_div_inv
