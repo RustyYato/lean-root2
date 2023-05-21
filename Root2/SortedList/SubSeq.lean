@@ -27,6 +27,24 @@ theorem List.sub_seq.pop {a: α} {as bs: List α} : (a::as).sub_seq bs -> as.sub
 
 #print axioms List.sub_seq.pop
 
+
+axiom F: False
+
+theorem List.sub_seq.push {x: α} {as bs: List α} : as.sub_seq bs -> (x::as).sub_seq (x::bs) := by
+  intro ss
+  unfold List.sub_seq
+  cases h:x::bs
+  contradiction
+  apply Or.inl
+  simp at h
+  have ⟨ left, right ⟩ := h -- propext
+  apply And.intro
+  exact left
+  rw [←right]
+  assumption
+
+#print axioms List.sub_seq.push
+
 theorem List.sub_seq.id (as: List α) : as.sub_seq as := by
   unfold List.sub_seq
   match as with
@@ -96,6 +114,7 @@ instance sub_seq.dec [DecidableEq α] (a b : List α) : Decidable (a.sub_seq b) 
 
 example : [0, 2].sub_seq [0, 1, 2] := by decide
 example : ¬[0, 1, 2].sub_seq [0, 2] := by decide
+example : ¬[0, 1, 2].sub_seq [0, 2, 1] := by decide
 
 def List.sub_seq.empty {{ a: List α }} : a.sub_seq [] -> a = [] := by
   intro

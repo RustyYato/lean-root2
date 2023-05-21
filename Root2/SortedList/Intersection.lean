@@ -1,4 +1,5 @@
 import Root2.SortedList
+import Root2.SortedList.SubSeq
 
 
 def List.intersect_sorted [Compare α] (a b: List α) : List α := match a with
@@ -365,3 +366,77 @@ def intersect_sorted.of_all [Compare α] {P : α -> Prop} :
   }
 
 #print axioms intersect_sorted.of_all
+
+theorem intersect_sorted.sub_seq_left  [Compare α] : 
+  ∀{{alist blist: List α}},
+  (alist.intersect_sorted blist).sub_seq alist := by
+  apply intersect_sorted.induction
+  {
+    intro bs
+    rw [intersect_sorted.empty_right]
+    exact List.sub_seq.id _
+  }
+  {
+    intro a as
+    rw [intersect_sorted.empty_left]
+    simp
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.intersect_sorted
+    simp only; rw [ord]; simp
+    assumption
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.intersect_sorted
+    simp only; rw [ord]; simp only
+    apply List.sub_seq.push
+    assumption
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.intersect_sorted
+    simp only; rw [ord]; simp
+    exact List.sub_seq.trans prev List.sub_seq.tail
+  }
+
+#print axioms intersect_sorted.sub_seq_left
+
+theorem intersect_sorted.sub_seq_right  [Compare α] : 
+  ∀{{alist blist: List α}},
+  (alist.intersect_sorted blist).sub_seq blist := by
+  apply intersect_sorted.induction
+  {
+    intro bs
+    rw [intersect_sorted.empty_right]
+    simp
+  }
+  {
+    intro a as
+    rw [intersect_sorted.empty_left]
+    exact List.sub_seq.id _
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.intersect_sorted
+    simp only; rw [ord]; simp
+    exact List.sub_seq.trans prev List.sub_seq.tail
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.intersect_sorted
+    simp only; rw [ord]; simp only
+    have : a = b := Compare.ord_implies_eq ord
+    rw [this]
+    apply List.sub_seq.push
+    assumption
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.intersect_sorted
+    simp only; rw [ord]; simp
+    assumption
+  }
+
+#print axioms intersect_sorted.sub_seq_right

@@ -1,4 +1,5 @@
 import Root2.SortedList
+import Root2.SortedList.SubSeq
 
 @[simp]
 def List.concat_sorted [Compare α] (a b: List α) : List α := match a with
@@ -540,3 +541,74 @@ theorem concat_sorted.any [Compare α] {{P : α -> Prop}} :
   }
 
 #print axioms concat_sorted.any
+
+theorem concat_sorted.sub_seq_left  [Compare α] : 
+  ∀{{alist blist: List α}},
+  alist.sub_seq (alist.concat_sorted blist) := by
+  apply concat_sorted.induction
+  {
+    intro bs
+    simp
+  }
+  {
+    intro a as
+    rw [concat_sorted.empty_left]
+    exact List.sub_seq.id _
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.concat_sorted
+    simp only; rw [ord]; simp only
+    exact List.sub_seq.trans prev List.sub_seq.tail
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.concat_sorted
+    simp only; rw [ord, Compare.ord_id]; simp only
+    exact List.sub_seq.trans (List.sub_seq.push prev) List.sub_seq.tail
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.concat_sorted
+    simp only; rw [Compare.flip ord]; simp
+    apply Or.inl
+    assumption
+  }
+
+#print axioms concat_sorted.sub_seq_left
+
+theorem concat_sorted.sub_seq_right  [Compare α] : 
+  ∀{{alist blist: List α}},
+  blist.sub_seq (alist.concat_sorted blist) := by
+  apply concat_sorted.induction
+  {
+    intro bs
+    rw [concat_sorted.empty_right]
+    exact List.sub_seq.id _
+  }
+  {
+    intro a as
+    rw [concat_sorted.empty_left]
+    simp
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.concat_sorted
+    simp only; rw [ord]; simp
+    apply Or.inl
+    assumption
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.concat_sorted
+    simp only; rw [ord, Compare.ord_id]; simp only
+    exact List.sub_seq.trans (List.sub_seq.push prev) List.sub_seq.tail
+  }
+  {
+    intro a b as bs ord prev
+    unfold List.concat_sorted
+    simp only; rw [Compare.flip ord]; simp
+    exact List.sub_seq.trans prev List.sub_seq.tail
+  }
+
+#print axioms concat_sorted.sub_seq_right
